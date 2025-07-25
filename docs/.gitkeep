@@ -1,0 +1,2 @@
+# 此文件用于保持docs目录在git中被跟踪
+# swag init命令会在此目录生成swagger文档文件 

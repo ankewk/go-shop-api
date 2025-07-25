@@ -1,0 +1,49 @@
+# Git相关
+.git
+.gitignore
+
+# 文档
+README.md
+docs/architecture.md
+
+# 编译产物
+*.exe
+gin-project.exe
+gin-project
+
+# 依赖目录
+vendor/
+
+# IDE相关
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统相关
+.DS_Store
+Thumbs.db
+
+# 日志文件
+*.log
+
+# 测试脚本
+test_*.ps1
+test_*.sh
+
+# 临时文件
+*.tmp
+*.temp
+
+# 环境文件（根据需要可能要包含）
+.env.local
+.env.development
+
+# Docker相关
+docker-compose.override.yml
+Dockerfile.dev
+
+# 构建脚本
+start.bat
+fix-deps.bat
+Makefile 
