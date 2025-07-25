@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # 开发环境MySQL配置
+  mysql:
+    ports:
+      - "3307:3306"  # 使用不同端口避免冲突
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gin_dev
+      MYSQL_USER: gin_dev
+      MYSQL_PASSWORD: gin_dev
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./scripts/seed_data.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+
+  # 开发环境应用配置
+  app:
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: gin_dev
+      DB_PASSWORD: gin_dev
+      DB_NAME: gin_dev
+      GIN_MODE: debug
+    volumes:
+      # 挂载源代码用于热重载（如果使用air等工具）
+      - .:/app
+    # 覆盖启动命令用于开发
+    # command: ["air", "-c", ".air.toml"]
+
+volumes:
+  mysql_dev_data:
+    driver: local 
