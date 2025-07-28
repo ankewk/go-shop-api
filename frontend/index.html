@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go Shop 微服务电商平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .service-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.1);
+        }
+        
+        .service-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .service-card p {
+            color: #666;
+            font-size: 0.95em;
+            margin-bottom: 15px;
+        }
+        
+        .service-card .port {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        
+        .api-links {
+            margin-top: 30px;
+        }
+        
+        .api-links h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .api-link {
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            display: block;
+        }
+        
+        .api-link:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f5e8;
+            border-radius: 10px;
+            border-left: 5px solid #28a745;
+        }
+        
+        .status h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .status p {
+            color: #155724;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Go Shop</h1>
+        <p class="subtitle">基于 Go + Gin 的微服务电商平台</p>
+        
+        <div class="services">
+            <div class="service-card">
+                <h3>🌐 API 网关</h3>
+                <p>统一入口，路由分发</p>
+                <span class="port">8080</span>
+            </div>
+            <div class="service-card">
+                <h3>👥 用户服务</h3>
+                <p>用户管理，身份认证</p>
+                <span class="port">8081</span>
+            </div>
+            <div class="service-card">
+                <h3>📦 产品服务</h3>
+                <p>商品管理，库存控制</p>
+                <span class="port">8082</span>
+            </div>
+            <div class="service-card">
+                <h3>🛒 购物车服务</h3>
+                <p>购物车管理，商品收藏</p>
+                <span class="port">8083</span>
+            </div>
+            <div class="service-card">
+                <h3>📋 订单服务</h3>
+                <p>订单处理，支付管理</p>
+                <span class="port">8084</span>
+            </div>
+        </div>
+        
+        <div class="api-links">
+            <h3>📖 API 接口</h3>
+            <div class="link-grid">
+                <a href="/api-routes" class="api-link">📋 查看所有API路由</a>
+                <a href="/health" class="api-link">🔧 系统健康检查</a>
+                <a href="/services" class="api-link">🏗️ 服务注册列表</a>
+                <a href="/api/v1/users" class="api-link">👥 用户列表</a>
+                <a href="/api/v1/products" class="api-link">📦 产品列表</a>
+                <a href="/gateway" class="api-link">🌐 网关信息</a>
+            </div>
+        </div>
+        
+        <div class="status">
+            <h4>✅ 系统状态</h4>
+            <p>所有微服务正在 Docker 容器中运行</p>
+        </div>
+    </div>
+
+    <script>
+        // 简单的健康检查显示
+        fetch('/health')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Health Check:', data);
+            })
+            .catch(error => {
+                console.log('Health Check Failed:', error);
+            });
+    </script>
+</body>
+</html> 

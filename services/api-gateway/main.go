@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	_ "gin-project/services/api-gateway/docs"
 	"gin-project/shared/response"
 
 	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // ServiceConfig 服务配置
@@ -314,6 +316,9 @@ func main() {
 	r.GET("/", func(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/shop")
 	})
+
+	// Swagger文档
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 网关管理路由
 	r.GET("/gateway", gateway.Welcome)

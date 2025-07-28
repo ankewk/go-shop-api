@@ -4,11 +4,13 @@ import (
 	"log"
 	"os"
 
+	_ "gin-project/services/product-service/docs"
 	"gin-project/shared/config"
 	"gin-project/shared/models"
 	"gin-project/shared/response"
 
 	"github.com/gin-gonic/gin"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
 
@@ -108,6 +110,9 @@ func main() {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+
+	// Swagger文档
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// 健康检查
 	r.GET("/health", productService.HealthCheck)
