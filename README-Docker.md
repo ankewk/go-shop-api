@@ -1,180 +1,262 @@
-# Docker 部署指南
+# Go Shop 微服务 Docker 部署指南
 
-本文档介绍如何使用 Docker 和 Docker Compose 部署 Gin MVC 项目。
+基于 Go + Gin 的微服务电商平台，完全容器化部署方案。
 
-## 📋 前置要求
+## 🏗️ 系统架构
 
-- Docker Desktop (Windows/Mac) 或 Docker Engine (Linux)
-- Docker Compose
-
-## 🚀 快速开始
-
-### 1. 生产环境部署
-
-使用预配置的脚本一键启动：
-
-```bash
-# Windows
-docker-start.bat
-
-# Linux/Mac
-docker-compose up -d
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   前端用户      │───▶│   API 网关      │───▶│   微服务集群    │
+│  (浏览器/APP)   │    │   (8080)        │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                              │                        │
+                              ▼                        ▼
+                    ┌─────────────────┐    ┌─────────────────┐
+                    │   负载均衡      │    │   数据库集群    │
+                    │   服务发现      │    │   MySQL (3306)  │
+                    └─────────────────┘    └─────────────────┘
 ```
 
-### 2. 开发环境部署
+## 📦 微服务组件
 
-```bash
-# Windows
-docker-dev.bat
+| 服务名称 | 端口 | 功能描述 | 容器名称 |
+|---------|------|---------|---------|
+| API 网关 | 8080 | 统一入口，路由分发，负载均衡 | gin-api-gateway |
+| 用户服务 | 8081 | 用户管理，身份认证 | gin-user-service |
+| 产品服务 | 8082 | 商品管理，库存控制 | gin-product-service |
+| 购物车服务 | 8083 | 购物车管理，商品收藏 | gin-cart-service |
+| 订单服务 | 8084 | 订单处理，支付管理 | gin-order-service |
+| MySQL 数据库 | 3306 | 数据持久化存储 | gin-mysql |
 
-# Linux/Mac
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+## 🚀 快速启动
+
+### 前置条件
+
+1. **安装 Docker Desktop**
+   ```bash
+   # Windows: 下载 Docker Desktop for Windows
+   # https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
+   
+   # macOS: 下载 Docker Desktop for Mac
+   # https://desktop.docker.com/mac/main/amd64/Docker.dmg
+   
+   # Linux: 安装 Docker 和 docker-compose
+   curl -fsSL https://get.docker.com -o get-docker.sh
+   sh get-docker.sh
+   sudo apt-get install docker-compose
+   ```
+
+2. **验证安装**
+   ```bash
+   docker --version
+   docker-compose --version
+   ```
+
+### 一键启动
+
+**Windows 用户：**
+```cmd
+# 双击运行
+docker-microservices-start.cmd
+
+# 或命令行运行
+.\docker-microservices-start.cmd
 ```
 
-## 📁 Docker 文件说明
+**Linux/macOS 用户：**
+```bash
+# 启动所有微服务
+docker-compose -f docker-compose.microservices.yml up -d --build
 
-### 核心文件
+# 查看启动状态
+docker-compose -f docker-compose.microservices.yml ps
+```
 
-- `Dockerfile` - Go 应用的多阶段构建配置
-- `docker-compose.yml` - 生产环境服务编排
-- `docker-compose.override.yml` - 开发环境覆盖配置
-- `.dockerignore` - Docker 构建忽略文件
+## 🔧 服务管理
 
-### 管理脚本
+### 查看服务状态
+```bash
+docker-compose -f docker-compose.microservices.yml ps
+```
 
-- `docker-start.bat` - 启动生产环境
-- `docker-dev.bat` - 启动开发环境
-- `docker-stop.bat` - 停止所有服务
-- `docker-rebuild.bat` - 重建镜像并启动
+### 查看服务日志
+```bash
+# 查看所有服务日志
+docker-compose -f docker-compose.microservices.yml logs -f
 
-## 🔧 服务配置
+# 查看特定服务日志
+docker-compose -f docker-compose.microservices.yml logs -f api-gateway
+docker-compose -f docker-compose.microservices.yml logs -f user-service
+```
 
-### 应用服务 (app)
+### 重启服务
+```bash
+# 重启所有服务
+docker-compose -f docker-compose.microservices.yml restart
 
-- **端口**: 8080
-- **镜像**: 本地构建
-- **环境变量**:
-  - `DB_HOST=mysql`
-  - `DB_PORT=3306`
-  - `DB_USER=gin_user`
-  - `DB_PASSWORD=gin_password`
-  - `DB_NAME=gin`
-  - `GIN_MODE=release`
+# 重启特定服务
+docker-compose -f docker-compose.microservices.yml restart api-gateway
+```
 
-### 数据库服务 (mysql)
+### 停止服务
+```bash
+# 停止所有服务
+docker-compose -f docker-compose.microservices.yml down
 
-- **端口**: 3306 (生产) / 3307 (开发)
-- **镜像**: mysql:8.0
-- **数据库**: gin / gin_dev
-- **用户**: gin_user / gin_dev
-- **密码**: gin_password / gin_dev
+# 停止并删除数据卷（危险操作）
+docker-compose -f docker-compose.microservices.yml down -v
+```
+
+### 重建服务
+```bash
+# 重新构建并启动
+docker-compose -f docker-compose.microservices.yml up -d --build --force-recreate
+```
 
 ## 🌐 访问地址
 
-### 生产环境
+### 主要入口
+- **商城首页**: http://localhost:8080
+- **API 网关**: http://localhost:8080/gateway
+- **健康检查**: http://localhost:8080/health
+- **API 路由**: http://localhost:8080/api-routes
+- **服务列表**: http://localhost:8080/services
 
-- 应用主页: http://localhost:8080
-- API文档: http://localhost:8080/swagger/index.html
-- 健康检查: http://localhost:8080/api/v1/health
-- MySQL: localhost:3306
+### 微服务端点
+- **用户服务**: http://localhost:8081/health
+- **产品服务**: http://localhost:8082/health
+- **购物车服务**: http://localhost:8083/health
+- **订单服务**: http://localhost:8084/health
 
-### 开发环境
-
-- 应用主页: http://localhost:8080
-- API文档: http://localhost:8080/swagger/index.html
-- MySQL: localhost:3307 (避免端口冲突)
-
-## 🛠️ 常用命令
-
-### 启动服务
-
+### API 接口示例
 ```bash
-# 启动所有服务
-docker-compose up -d
+# 获取用户列表
+curl http://localhost:8080/api/v1/users
 
-# 启动开发环境
-docker-compose -f docker-compose.yml -f docker-compose.override.yml up -d
+# 获取产品列表
+curl http://localhost:8080/api/v1/products
+
+# 创建新用户
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"测试用户","email":"test@example.com","phone":"13800138000"}'
+
+# 添加商品到购物车
+curl -X POST "http://localhost:8080/api/v1/cart/items?user_id=1" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":1,"quantity":2}'
 ```
 
-### 查看状态
+## 💾 数据库访问
 
+### 连接信息
+- **主机**: localhost
+- **端口**: 3306
+- **数据库**: gin
+- **用户名**: gin_user
+- **密码**: gin_password
+
+### 使用客户端连接
 ```bash
-# 查看服务状态
-docker-compose ps
+# 使用 MySQL 客户端
+mysql -h localhost -P 3306 -u gin_user -p gin
 
-# 查看日志
-docker-compose logs -f
-
-# 查看特定服务日志
-docker-compose logs -f app
-docker-compose logs -f mysql
+# 使用 Docker 容器连接
+docker exec -it gin-mysql mysql -u gin_user -p gin
 ```
 
-### 停止和清理
+## 🔍 监控和调试
 
+### 容器资源监控
 ```bash
-# 停止服务
-docker-compose down
-
-# 停止服务并删除数据卷
-docker-compose down -v
-
-# 重建镜像
-docker-compose build --no-cache
-```
-
-### 进入容器
-
-```bash
-# 进入应用容器
-docker exec -it gin-app sh
-
-# 进入数据库容器
-docker exec -it gin-mysql mysql -u gin_user -p
-```
-
-## 🗄️ 数据初始化
-
-项目包含以下初始化脚本：
-
-1. `scripts/init.sql` - 数据库表结构初始化
-2. `scripts/seed_data.sql` - 示例数据插入
-
-这些脚本会在MySQL容器首次启动时自动执行。
-
-### 示例数据
-
-- **用户**: 张三、李四、王五、管理员
-- **产品**: iPhone 15、MacBook Pro、iPad Air、AirPods Pro、Apple Watch
-
-## 🔍 健康检查
-
-两个服务都配置了健康检查：
-
-- **MySQL**: 使用 `mysqladmin ping` 检查
-- **App**: 访问 `/api/v1/health` 端点检查
-
-## 📊 监控和调试
-
-### 查看资源使用情况
-
-```bash
-# 查看容器资源使用
+# 查看容器资源使用情况
 docker stats
 
-# 查看网络
-docker network ls
-docker network inspect gin_gin-network
+# 查看特定容器状态
+docker inspect gin-api-gateway
 ```
 
-### 数据库连接测试
-
+### 进入容器调试
 ```bash
-# 从应用容器测试数据库连接
-docker exec -it gin-app sh
-# 在容器内执行
-wget -qO- http://localhost:8080/api/v1/health
+# 进入 API 网关容器
+docker exec -it gin-api-gateway sh
+
+# 进入数据库容器
+docker exec -it gin-mysql bash
 ```
+
+### 网络调试
+```bash
+# 查看 Docker 网络
+docker network ls
+
+# 查看微服务网络详情
+docker network inspect go-shop-api_microservices-network
+```
+
+## 🛠️ 开发和部署
+
+### 开发模式
+```bash
+# 挂载源码进行开发（修改 docker-compose.yml）
+docker-compose -f docker-compose.microservices.yml -f docker-compose.dev.yml up -d
+```
+
+### 生产部署
+```bash
+# 设置生产环境变量
+export GIN_MODE=release
+
+# 使用生产配置启动
+docker-compose -f docker-compose.microservices.yml up -d
+```
+
+### 扩展服务
+```bash
+# 扩展用户服务到 3 个实例
+docker-compose -f docker-compose.microservices.yml up -d --scale user-service=3
+```
+
+## 🔐 安全配置
+
+### 环境变量配置
+创建 `.env` 文件：
+```env
+# 数据库配置
+DB_ROOT_PASSWORD=your_root_password
+DB_PASSWORD=your_password
+DB_USER=your_user
+
+# 应用配置
+GIN_MODE=release
+JWT_SECRET=your_jwt_secret
+```
+
+### 网络安全
+- 所有服务运行在独立的 Docker 网络中
+- 数据库不对外暴露，仅微服务内部访问
+- API 网关作为唯一外部入口
+
+## 📊 性能优化
+
+### 资源限制
+```yaml
+services:
+  api-gateway:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+```
+
+### 缓存配置
+- Redis 缓存层（可选）
+- 数据库连接池优化
+- 静态资源 CDN 加速
 
 ## 🚨 故障排除
 
@@ -182,95 +264,59 @@ wget -qO- http://localhost:8080/api/v1/health
 
 1. **端口被占用**
    ```bash
-   # 检查端口使用情况
-   netstat -ano | findstr :8080
-   netstat -ano | findstr :3306
-   ```
-
-2. **数据库连接失败**
-   ```bash
-   # 检查数据库服务状态
-   docker-compose logs mysql
+   # 查看端口占用
+   netstat -tlnp | grep :8080
    
-   # 重启数据库服务
-   docker-compose restart mysql
+   # 杀掉占用进程
+   kill -9 <PID>
    ```
 
-3. **应用启动失败**
+2. **容器启动失败**
    ```bash
-   # 查看应用日志
-   docker-compose logs app
-   
-   # 重建应用镜像
-   docker-compose build --no-cache app
+   # 查看详细错误日志
+   docker-compose -f docker-compose.microservices.yml logs api-gateway
    ```
 
-4. **清理所有数据重新开始**
+3. **数据库连接失败**
    ```bash
-   docker-compose down -v
+   # 检查数据库容器状态
+   docker exec gin-mysql mysqladmin ping -h localhost
+   ```
+
+4. **内存不足**
+   ```bash
+   # 清理未使用的镜像和容器
    docker system prune -a
-   docker-compose up -d
    ```
 
-## ⚙️ 环境变量配置
-
-你可以通过以下方式自定义配置：
-
-1. 修改 `docker-compose.yml` 中的环境变量
-2. 创建 `.env` 文件（参考 `.env.example`）
-3. 使用 `docker-compose.override.yml` 覆盖设置
-
-### 示例 .env 文件
-
-```env
-# 数据库配置
-DB_HOST=mysql
-DB_PORT=3306
-DB_USER=gin_user
-DB_PASSWORD=your_password
-DB_NAME=gin
-
-# 应用配置
-GIN_MODE=release
-PORT=8080
-```
-
-## 🔒 安全建议
-
-1. **生产环境**:
-   - 修改默认密码
-   - 使用强密码
-   - 配置防火墙规则
-   - 定期更新镜像
-
-2. **网络安全**:
-   - 不要暴露数据库端口到公网
-   - 使用 HTTPS (需要配置反向代理)
-   - 定期备份数据
-
-## 📝 更新和维护
-
-### 更新应用
-
+### 日志收集
 ```bash
-# 停止服务
-docker-compose down
-
-# 拉取最新代码
-git pull
-
-# 重建并启动
-docker-compose up -d --build
+# 导出所有服务日志
+docker-compose -f docker-compose.microservices.yml logs > microservices.log
 ```
 
-### 数据备份
+## 📝 维护说明
 
+### 备份数据
 ```bash
 # 备份数据库
 docker exec gin-mysql mysqldump -u gin_user -p gin > backup.sql
 
-# 恢复数据库
-docker exec -i gin-mysql mysql -u gin_user -p gin < backup.sql
+# 备份数据卷
+docker run --rm -v go-shop-api_mysql_data:/data -v $(pwd):/backup alpine tar czf /backup/mysql_backup.tar.gz /data
 ```
 
-这就是完整的 Docker 部署指南。如有问题，请查看日志或联系开发团队。 
+### 更新服务
+```bash
+# 拉取最新代码
+git pull origin main
+
+# 重新构建并部署
+docker-compose -f docker-compose.microservices.yml up -d --build
+```
+
+---
+
+**🎉 恭喜！你的 Go Shop 微服务平台已经在 Docker 中成功运行！**
+
+如有问题，请查看日志或联系技术支持。 

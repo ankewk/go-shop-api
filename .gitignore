@@ -38,4 +38,17 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Backup scripts (optional)
+*-gbk.cmd
+*-en.cmd 
