@@ -12,7 +12,7 @@
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -24,178 +24,142 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            padding: 40px;
+            padding: 60px 40px;
+            text-align: center;
             max-width: 800px;
             width: 90%;
-            text-align: center;
         }
         
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2.5em;
+        .logo {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
         }
         
         .subtitle {
             color: #666;
+            font-size: 1.2rem;
             margin-bottom: 40px;
-            font-size: 1.2em;
         }
         
-        .services {
+        .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            margin-bottom: 40px;
+            margin: 40px 0;
         }
         
-        .service-card {
+        .status-card {
             background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
         }
         
-        .service-card:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.1);
-        }
-        
-        .service-card h3 {
+        .status-card h3 {
             color: #333;
             margin-bottom: 10px;
-            font-size: 1.3em;
         }
         
-        .service-card p {
+        .status-card p {
             color: #666;
-            font-size: 0.95em;
-            margin-bottom: 15px;
+            font-size: 0.9rem;
         }
         
-        .service-card .port {
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85em;
-            font-weight: bold;
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 40px;
         }
         
-        .api-links {
-            margin-top: 30px;
-        }
-        
-        .api-links h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-        
-        .link-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        
-        .api-link {
-            background: #667eea;
+        .link-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             text-decoration: none;
-            padding: 15px 20px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            display: block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: transform 0.2s;
         }
         
-        .api-link:hover {
-            background: #5a6fd8;
+        .link-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
         
-        .status {
-            margin-top: 30px;
-            padding: 20px;
-            background: #e8f5e8;
-            border-radius: 10px;
-            border-left: 5px solid #28a745;
+        .env-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
         }
         
-        .status h4 {
-            color: #155724;
-            margin-bottom: 10px;
-        }
-        
-        .status p {
-            color: #155724;
-            margin: 0;
+        .env-info strong {
+            color: #1976d2;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛍️ Go Shop</h1>
-        <p class="subtitle">基于 Go + Gin 的微服务电商平台</p>
+        <div class="logo">🛍️ Go Shop</div>
+        <div class="subtitle">基于 Go + Gin 的微服务电商平台</div>
         
-        <div class="services">
-            <div class="service-card">
-                <h3>🌐 API 网关</h3>
-                <p>统一入口，路由分发</p>
-                <span class="port">8080</span>
+        <div class="env-info">
+            <strong>🌍 当前环境:</strong> <span id="current-env">检测中...</span>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-card">
+                <h3>🚀 微服务架构</h3>
+                <p>独立可扩展的服务设计</p>
             </div>
-            <div class="service-card">
-                <h3>👥 用户服务</h3>
-                <p>用户管理，身份认证</p>
-                <span class="port">8081</span>
+            <div class="status-card">
+                <h3>🐳 容器化部署</h3>
+                <p>Docker + Docker Compose</p>
             </div>
-            <div class="service-card">
-                <h3>📦 产品服务</h3>
-                <p>商品管理，库存控制</p>
-                <span class="port">8082</span>
+            <div class="status-card">
+                <h3>📊 完整监控</h3>
+                <p>Prometheus + Grafana</p>
             </div>
-            <div class="service-card">
-                <h3>🛒 购物车服务</h3>
-                <p>购物车管理，商品收藏</p>
-                <span class="port">8083</span>
-            </div>
-            <div class="service-card">
-                <h3>📋 订单服务</h3>
-                <p>订单处理，支付管理</p>
-                <span class="port">8084</span>
+            <div class="status-card">
+                <h3>🛡️ 多环境支持</h3>
+                <p>DEV / UAT / PROD</p>
             </div>
         </div>
         
-        <div class="api-links">
-            <h3>📖 API 接口</h3>
-            <div class="link-grid">
-                <a href="/api-routes" class="api-link">📋 查看所有API路由</a>
-                <a href="/health" class="api-link">🔧 系统健康检查</a>
-                <a href="/services" class="api-link">🏗️ 服务注册列表</a>
-                <a href="/api/v1/users" class="api-link">👥 用户列表</a>
-                <a href="/api/v1/products" class="api-link">📦 产品列表</a>
-                <a href="/gateway" class="api-link">🌐 网关信息</a>
-            </div>
-        </div>
-        
-        <div class="status">
-            <h4>✅ 系统状态</h4>
-            <p>所有微服务正在 Docker 容器中运行</p>
+        <div class="links">
+            <a href="/api/health" class="link-btn">🔧 健康检查</a>
+            <a href="/api/services" class="link-btn">📋 服务列表</a>
+            <a href="/api/api-routes" class="link-btn">📖 API路由</a>
         </div>
     </div>
-
+    
     <script>
-        // 简单的健康检查显示
-        fetch('/health')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Health Check:', data);
-            })
-            .catch(error => {
-                console.log('Health Check Failed:', error);
-            });
+        // 检测当前环境
+        function detectEnvironment() {
+            const port = window.location.port;
+            const hostname = window.location.hostname;
+            let env = '未知';
+            
+            if (hostname === 'localhost') {
+                if (port === '80' || port === '') {
+                    env = '开发环境 (DEV)';
+                } else if (port === '8180') {
+                    env = '测试环境 (UAT)';
+                } else if (port === '8080' || port === '443') {
+                    env = '生产环境 (PROD)';
+                }
+            }
+            
+            document.getElementById('current-env').textContent = env;
+        }
+        
+        // 页面加载完成后检测环境
+        document.addEventListener('DOMContentLoaded', detectEnvironment);
     </script>
 </body>
 </html> 

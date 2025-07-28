@@ -22,7 +22,7 @@
 | 服务名称 | 端口 | 功能描述 | 容器名称 |
 |---------|------|---------|---------|
 | API 网关 | 8080 | 统一入口，路由分发，负载均衡 | gin-api-gateway |
-| 用户服务 | 8081 | 用户管理，身份认证 | gin-user-service |
+| 用户服务 | 8085 | 用户管理，身份认证 | gin-user-service |
 | 产品服务 | 8082 | 商品管理，库存控制 | gin-product-service |
 | 购物车服务 | 8083 | 购物车管理，商品收藏 | gin-cart-service |
 | 订单服务 | 8084 | 订单处理，支付管理 | gin-order-service |
@@ -123,7 +123,7 @@ docker-compose -f docker-compose.microservices.yml up -d --build --force-recreat
 - **服务列表**: http://localhost:8080/services
 
 ### 微服务端点
-- **用户服务**: http://localhost:8081/health
+- **用户服务**: http://localhost:8085/health
 - **产品服务**: http://localhost:8082/health
 - **购物车服务**: http://localhost:8083/health
 - **订单服务**: http://localhost:8084/health

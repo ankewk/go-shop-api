@@ -1,0 +1,310 @@
+version: '3.8'
+
+services:
+  # MySQL主库 - 生产环境
+  mysql-prod-master:
+    image: mysql:8.0
+    container_name: gin-mysql-prod-master
+    restart: unless-stopped
+    ports:
+      - "3309:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: prod_root_789_secure
+      MYSQL_DATABASE: gin_prod
+      MYSQL_USER: gin_prod_user
+      MYSQL_PASSWORD: gin_prod_pass_secure
+      MYSQL_REPLICATION_MODE: master
+      MYSQL_REPLICATION_USER: repl_user
+      MYSQL_REPLICATION_PASSWORD: repl_pass_secure
+    volumes:
+      - mysql_data_prod_master:/var/lib/mysql
+      - ../scripts/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ../scripts/seed_data.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      - ./mysql/prod.cnf:/etc/mysql/conf.d/custom.cnf
+    command: --default-authentication-plugin=mysql_native_password --server-id=1 --log-bin=mysql-bin
+    networks:
+      - microservices-prod-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "gin_prod_user", "-pgin_prod_pass_secure"]
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+      interval: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # MySQL从库 - 生产环境
+  mysql-prod-slave:
+    image: mysql:8.0
+    container_name: gin-mysql-prod-slave
+    restart: unless-stopped
+    ports:
+      - "3310:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: prod_root_789_secure
+      MYSQL_REPLICATION_MODE: slave
+      MYSQL_REPLICATION_USER: repl_user
+      MYSQL_REPLICATION_PASSWORD: repl_pass_secure
+      MYSQL_MASTER_HOST: mysql-prod-master
+      MYSQL_MASTER_PORT_NUMBER: 3306
+      MYSQL_MASTER_ROOT_PASSWORD: prod_root_789_secure
+    volumes:
+      - mysql_data_prod_slave:/var/lib/mysql
+      - ./mysql/prod.cnf:/etc/mysql/conf.d/custom.cnf
+    command: --default-authentication-plugin=mysql_native_password --server-id=2
+    depends_on:
+      - mysql-prod-master
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Redis主节点 - 生产环境
+  redis-prod-master:
+    image: redis:7-alpine
+    container_name: gin-redis-prod-master
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    command: redis-server --requirepass prod_redis_789_secure --appendonly yes
+    volumes:
+      - redis_data_prod_master:/data
+      - ./redis/prod.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - microservices-prod-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+      interval: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # API网关集群 - 生产环境 (主节点)
+  api-gateway-prod-1:
+    build:
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile.simple
+    container_name: gin-api-gateway-prod-1
+    restart: unless-stopped
+    ports:
+      - "7080:7080"
+    env_file:
+      - ../config/prod.env
+    environment:
+      PORT: 7080
+      GIN_MODE: release
+      USER_SERVICE_HOST: host.docker.internal
+      USER_SERVICE_PORT: 7085
+      PRODUCT_SERVICE_HOST: host.docker.internal
+      PRODUCT_SERVICE_PORT: 7082
+      CART_SERVICE_HOST: host.docker.internal
+      CART_SERVICE_PORT: 7083
+      ORDER_SERVICE_HOST: host.docker.internal
+      ORDER_SERVICE_PORT: 7084
+      INSTANCE_ID: gateway-1
+    depends_on:
+      mysql-prod-master:
+        condition: service_healthy
+      redis-prod-master:
+        condition: service_healthy
+    networks:
+      - microservices-prod-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../logs/prod:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7080/health"]
+      timeout: 30s
+      retries: 3
+      start_period: 120s
+      interval: 120s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # API网关集群 - 生产环境 (备用节点)
+  api-gateway-prod-2:
+    build:
+      context: ..
+      dockerfile: services/api-gateway/Dockerfile.simple
+    container_name: gin-api-gateway-prod-2
+    restart: unless-stopped
+    ports:
+      - "7081:7080"
+    env_file:
+      - ../config/prod.env
+    environment:
+      PORT: 7080
+      GIN_MODE: release
+      USER_SERVICE_HOST: host.docker.internal
+      USER_SERVICE_PORT: 7085
+      PRODUCT_SERVICE_HOST: host.docker.internal
+      PRODUCT_SERVICE_PORT: 7082
+      CART_SERVICE_HOST: host.docker.internal
+      CART_SERVICE_PORT: 7083
+      ORDER_SERVICE_HOST: host.docker.internal
+      ORDER_SERVICE_PORT: 7084
+      INSTANCE_ID: gateway-2
+    depends_on:
+      mysql-prod-master:
+        condition: service_healthy
+      redis-prod-master:
+        condition: service_healthy
+    networks:
+      - microservices-prod-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../logs/prod:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Nginx负载均衡器 - 生产环境
+  nginx-prod:
+    image: nginx:alpine
+    container_name: gin-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "8080:80"
+    volumes:
+      - ./nginx/prod.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend:/usr/share/nginx/html
+      - ../logs/nginx/prod:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - api-gateway-prod-1
+      - api-gateway-prod-2
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # 监控服务 - Prometheus (生产环境)
+  prometheus-prod:
+    image: prom/prometheus:latest
+    container_name: gin-prometheus-prod
+    restart: unless-stopped
+    ports:
+      - "9092:9090"
+    volumes:
+      - ./prometheus/prod.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data_prod:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=2160h'
+      - '--web.enable-lifecycle'
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # 日志管理 - Grafana (生产环境)
+  grafana-prod:
+    image: grafana/grafana:latest
+    container_name: gin-grafana-prod
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=prod_admin_789_secure
+    volumes:
+      - grafana_data_prod:/var/lib/grafana
+    depends_on:
+      - prometheus-prod
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # 日志收集 - ELK Stack
+  elasticsearch-prod:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: gin-elasticsearch-prod
+    restart: unless-stopped
+    ports:
+      - "9201:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=prod_elastic_secure
+    volumes:
+      - elasticsearch_data_prod:/usr/share/elasticsearch/data
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # 消息队列 - RabbitMQ (生产环境)
+  rabbitmq-prod:
+    image: rabbitmq:3-management-alpine
+    container_name: gin-rabbitmq-prod
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: prod_rabbit_user
+      RABBITMQ_DEFAULT_PASS: prod_rabbit_pass_secure
+    volumes:
+      - rabbitmq_data_prod:/var/lib/rabbitmq
+    networks:
+      - microservices-prod-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  microservices-prod-network:
+    driver: bridge
+    name: go-shop-prod-network
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  mysql_data_prod_master:
+    driver: local
+  mysql_data_prod_slave:
+    driver: local
+  redis_data_prod_master:
+    driver: local
+  prometheus_data_prod:
+    driver: local
+  grafana_data_prod:
+    driver: local
+  elasticsearch_data_prod:
+    driver: local
+  rabbitmq_data_prod:
+    driver: local 

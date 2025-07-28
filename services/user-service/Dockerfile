@@ -12,8 +12,8 @@ RUN apk add --no-cache git
 # 复制共享包
 COPY shared/ ./shared/
 
-# 复制服务的 go mod 文件
-COPY services/user-service/go.mod services/user-service/go.sum ./
+# 复制Docker专用的go.mod文件
+COPY services/user-service/go.mod.docker ./go.mod
 
 # 下载依赖
 RUN go mod download

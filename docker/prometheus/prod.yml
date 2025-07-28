@@ -1,0 +1,106 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+  external_labels:
+    environment: 'production'
+    cluster: 'go-shop-prod'
+
+rule_files:
+
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API网关集群监控
+  - job_name: 'api-gateway-prod'
+    static_configs:
+      - targets: 
+        - 'api-gateway-prod-1:7080'
+        - 'api-gateway-prod-2:7080'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # MySQL主从监控
+  - job_name: 'mysql-prod-master'
+    static_configs:
+      - targets: ['mysql-prod-master:3306']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    labels:
+      role: 'master'
+
+  - job_name: 'mysql-prod-slave'
+    static_configs:
+      - targets: ['mysql-prod-slave:3306']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    labels:
+      role: 'slave'
+
+  # Redis集群监控
+  - job_name: 'redis-prod'
+    static_configs:
+      - targets: ['redis-prod-master:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Elasticsearch监控
+  - job_name: 'elasticsearch-prod'
+    static_configs:
+      - targets: ['elasticsearch-prod:9200']
+    metrics_path: '/_prometheus/metrics'
+    scrape_interval: 30s
+
+  # RabbitMQ监控
+  - job_name: 'rabbitmq-prod'
+    static_configs:
+      - targets: ['rabbitmq-prod:15692']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Nginx负载均衡器监控
+  - job_name: 'nginx-prod'
+    static_configs:
+      - targets: ['nginx-prod:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 15s
+
+  # 微服务监控（通过主机网络）
+  - job_name: 'user-service-prod'
+    static_configs:
+      - targets: ['host.docker.internal:7085']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'product-service-prod'
+    static_configs:
+      - targets: ['host.docker.internal:7082']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'cart-service-prod'
+    static_configs:
+      - targets: ['host.docker.internal:7083']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'order-service-prod'
+    static_configs:
+      - targets: ['host.docker.internal:7084']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # 系统监控（需要node_exporter）
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+    scrape_interval: 15s
+
+# 报警规则（生产环境）
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093 

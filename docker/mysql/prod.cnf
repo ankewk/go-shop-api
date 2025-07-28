@@ -1,0 +1,51 @@
+[mysql]
+default-character-set = utf8mb4
+
+[mysqld]
+# 基本设置
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+default-storage-engine = InnoDB
+
+# 连接设置
+max_connections = 1000
+max_connect_errors = 100
+max_allowed_packet = 64M
+
+# 查询缓存
+query_cache_type = 1
+query_cache_size = 128M
+
+# InnoDB设置 - 生产环境优化
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+innodb_flush_log_at_trx_commit = 1
+innodb_buffer_pool_instances = 4
+innodb_read_io_threads = 8
+innodb_write_io_threads = 8
+
+# 日志设置
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 0.5
+log_queries_not_using_indexes = 1
+
+# 生产环境设置 - 最严格模式
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+
+# 安全设置
+local_infile = 0
+skip_show_database
+
+# 主从复制设置
+server-id = 1
+log-bin = mysql-bin
+binlog_format = ROW
+expire_logs_days = 7
+
+# 性能监控
+performance_schema = ON
+innodb_monitor_enable = all
+
+[client]
+default-character-set = utf8mb4 

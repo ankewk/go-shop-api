@@ -11,7 +11,7 @@
 | 服务名称 | Swagger 地址 | 端口 | 描述 |
 |---------|-------------|------|------|
 | **API 网关** | http://localhost:8080/swagger/index.html | 8080 | 🌐 统一API文档入口 |
-| 用户服务 | http://localhost:8081/swagger/index.html | 8081 | 👥 用户管理API |
+| 用户服务 | http://localhost:8085/swagger/index.html | 8085 | 👥 用户管理API |
 | 产品服务 | http://localhost:8082/swagger/index.html | 8082 | 📦 产品管理API |
 | 购物车服务 | http://localhost:8083/swagger/index.html | 8083 | 🛒 购物车API |
 | 订单服务 | http://localhost:8084/swagger/index.html | 8084 | 📋 订单管理API |
@@ -51,7 +51,7 @@ docker-compose -f docker-compose.microservices.yml up -d --build
 - **购物车管理**: 代理到购物车服务的购物车操作
 - **订单管理**: 代理到订单服务的订单操作
 
-### 👥 用户服务 (8081)
+### 👥 用户服务 (8085)
 ```
 GET    /api/v1/users          # 获取用户列表
 POST   /api/v1/users          # 创建新用户
@@ -146,7 +146,7 @@ Content-Type: application/json
 ### 3. OpenAPI 规范导出
 访问各服务的 `/swagger/doc.json` 端点获取OpenAPI JSON：
 - http://localhost:8080/swagger/doc.json (API网关)
-- http://localhost:8081/swagger/doc.json (用户服务)
+- http://localhost:8085/swagger/doc.json (用户服务)
 - http://localhost:8082/swagger/doc.json (产品服务)
 - http://localhost:8083/swagger/doc.json (购物车服务)  
 - http://localhost:8084/swagger/doc.json (订单服务)
@@ -157,7 +157,7 @@ Content-Type: application/json
 API网关负责将请求路由到对应的微服务：
 
 ```
-/api/v1/users/*     → 用户服务 (8081)
+/api/v1/users/*     → 用户服务 (8085)
 /api/v1/products/*  → 产品服务 (8082)
 /api/v1/cart/*      → 购物车服务 (8083)
 /api/v1/orders/*    → 订单服务 (8084)

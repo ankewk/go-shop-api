@@ -1,66 +1,102 @@
--- 种子数据脚本
-USE gin;
+-- ==================================================
+-- Go Shop 微服务平台 - 测试数据种子脚本
+-- ==================================================
 
 -- 插入测试用户数据
-INSERT INTO users (name, email, phone, status) VALUES
-('张三', 'zhangsan@example.com', '13800138001', 1),
-('李四', 'lisi@example.com', '13800138002', 1),
-('王五', 'wangwu@example.com', '13800138003', 1),
-('赵六', 'zhaoliu@example.com', '13800138004', 1),
-('孙七', 'sunqi@example.com', '13800138005', 1)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+INSERT INTO `users` (`username`, `email`, `password`, `phone`, `status`, `created_at`, `updated_at`) VALUES
+('admin', 'admin@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKXMf0jEfVLddAD7CPCwQk4V1wme', '13800138001', 1, NOW(3), NOW(3)),
+('test_user', 'test@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKXMf0jEfVLddAD7CPCwQk4V1wme', '13800138002', 1, NOW(3), NOW(3)),
+('demo_user', 'demo@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iKXMf0jEfVLddAD7CPCwQk4V1wme', '13800138003', 1, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
+
+-- 插入产品分类数据
+INSERT INTO `categories` (`name`, `description`, `parent_id`, `sort_order`, `status`, `created_at`, `updated_at`) VALUES
+('电子产品', '各类电子设备和配件', 0, 1, 1, NOW(3), NOW(3)),
+('服装鞋帽', '时尚服装和鞋帽配饰', 0, 2, 1, NOW(3), NOW(3)),
+('家居生活', '家居用品和生活必需品', 0, 3, 1, NOW(3), NOW(3)),
+('图书音像', '图书、音乐和影视产品', 0, 4, 1, NOW(3), NOW(3)),
+('运动户外', '运动器材和户外用品', 0, 5, 1, NOW(3), NOW(3)),
+('手机数码', '手机及数码产品', 1, 1, 1, NOW(3), NOW(3)),
+('电脑办公', '电脑及办公设备', 1, 2, 1, NOW(3), NOW(3)),
+('男装', '男士服装', 2, 1, 1, NOW(3), NOW(3)),
+('女装', '女士服装', 2, 2, 1, NOW(3), NOW(3)),
+('童装', '儿童服装', 2, 3, 1, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
 -- 插入测试产品数据
-INSERT INTO products (name, description, price, stock, category, status) VALUES
-('iPhone 15 Pro', '苹果最新旗舰手机，采用A17 Pro芯片', 7999.00, 50, '手机数码', 1),
-('MacBook Pro 14', '专业级笔记本电脑，M3芯片加持', 14999.00, 30, '电脑办公', 1),
-('AirPods Pro 3', '主动降噪无线耳机，空间音频体验', 1899.00, 100, '数码配件', 1),
-('iPad Air 5', '轻薄便携平板电脑，M1芯片性能强劲', 4399.00, 80, '平板电脑', 1),
-('Apple Watch Series 9', '智能手表，健康监测新升级', 2999.00, 120, '智能穿戴', 1),
-('小米13 Ultra', '徕卡光学镜头，影像旗舰', 5999.00, 60, '手机数码', 1),
-('华为Mate 60 Pro', '卫星通话，突破不可能', 6999.00, 40, '手机数码', 1),
-('ThinkPad X1 Carbon', '商务笔记本，轻薄便携', 12999.00, 25, '电脑办公', 1),
-('索尼WH-1000XM5', '顶级降噪耳机，音质出众', 2399.00, 70, '数码配件', 1),
-('Switch OLED', '任天堂游戏主机，OLED屏幕升级', 2599.00, 45, '游戏娱乐', 1),
-('Tesla Model 3', '电动汽车，智能驾驶', 235900.00, 5, '新能源车', 1),
-('戴森V15', '无线吸尘器，强力清洁', 4590.00, 35, '家用电器', 1),
-('米家扫地机器人', '智能清扫，激光导航', 1599.00, 90, '智能家居', 1),
-('海信75英寸电视', '4K超高清，HDR显示', 3999.00, 20, '家用电器', 1),
-('美的空调变频', '1.5匹变频空调，静音节能', 2899.00, 55, '家用电器', 1)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+INSERT INTO `products` (`name`, `description`, `sku`, `category_id`, `price`, `cost_price`, `market_price`, `stock`, `min_stock`, `status`, `is_featured`, `created_at`, `updated_at`) VALUES
+('iPhone 15 Pro', '苹果最新旗舰手机，配备A17 Pro芯片', 'IPHONE15PRO128', 6, 7999.00, 6500.00, 8999.00, 50, 5, 1, 1, NOW(3), NOW(3)),
+('MacBook Pro 14', '专业级笔记本电脑，M3芯片', 'MBP14M3512', 7, 14999.00, 12000.00, 16999.00, 20, 2, 1, 1, NOW(3), NOW(3)),
+('AirPods Pro', '主动降噪无线耳机', 'AIRPODSPRO2', 6, 1999.00, 1500.00, 2399.00, 100, 10, 1, 1, NOW(3), NOW(3)),
+('Nike Air Force 1', '经典白色运动鞋', 'NIKEAF1WHITE42', 5, 899.00, 600.00, 1099.00, 80, 5, 1, 0, NOW(3), NOW(3)),
+('Adidas Ultraboost', '缓震跑步鞋', 'ADIDASUB22BLK43', 5, 1299.00, 800.00, 1599.00, 60, 5, 1, 1, NOW(3), NOW(3)),
+('Uniqlo基础T恤', '纯棉舒适T恤衫', 'UNIQLOBASICT1', 8, 99.00, 50.00, 149.00, 200, 20, 1, 0, NOW(3), NOW(3)),
+('Zara女士连衣裙', '优雅修身连衣裙', 'ZARADRESS001M', 9, 299.00, 150.00, 399.00, 30, 3, 1, 1, NOW(3), NOW(3)),
+('小米空气净化器', '智能家用空气净化器', 'MIAIRPURIFIER4', 3, 899.00, 600.00, 1299.00, 40, 5, 1, 1, NOW(3), NOW(3)),
+('Kindle Paperwhite', '电子书阅读器', 'KINDLEPW11TH', 4, 898.00, 600.00, 1098.00, 25, 3, 1, 0, NOW(3), NOW(3)),
+('乐高积木城堡', '儿童益智拼装玩具', 'LEGOCASTLE2024', 10, 599.00, 300.00, 799.00, 15, 2, 1, 1, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
--- 为用户1创建购物车和购物车项（示例数据）
-INSERT INTO carts (user_id) VALUES (1) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id);
+-- 插入用户地址数据
+INSERT INTO `user_addresses` (`user_id`, `name`, `phone`, `province`, `city`, `district`, `address`, `postal_code`, `is_default`, `created_at`, `updated_at`) VALUES
+(1, '张三', '13800138001', '北京市', '北京市', '朝阳区', '三里屯街道工体北路1号', '100027', 1, NOW(3), NOW(3)),
+(2, '李四', '13800138002', '上海市', '上海市', '浦东新区', '陆家嘴环路1000号', '200120', 1, NOW(3), NOW(3)),
+(3, '王五', '13800138003', '广东省', '深圳市', '南山区', '科技园南区深南大道9999号', '518057', 1, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
-SET @cart_id = (SELECT id FROM carts WHERE user_id = 1);
+-- 插入购物车测试数据
+INSERT INTO `carts` (`user_id`, `product_id`, `quantity`, `price`, `created_at`, `updated_at`) VALUES
+(2, 1, 1, 7999.00, NOW(3), NOW(3)),
+(2, 3, 2, 1999.00, NOW(3), NOW(3)),
+(3, 4, 1, 899.00, NOW(3), NOW(3)),
+(3, 7, 1, 299.00, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
-INSERT INTO cart_items (cart_id, product_id, quantity, price) VALUES
-(@cart_id, 1, 1, 7999.00),
-(@cart_id, 3, 2, 1899.00)
-ON DUPLICATE KEY UPDATE quantity=VALUES(quantity), price=VALUES(price);
+-- 插入测试订单数据
+INSERT INTO `orders` (`order_no`, `user_id`, `total_amount`, `discount_amount`, `shipping_amount`, `final_amount`, `status`, `payment_status`, `shipping_address`, `created_at`, `updated_at`) VALUES
+(CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), '001'), 1, 7999.00, 0.00, 0.00, 7999.00, 'completed', 'paid', JSON_OBJECT('name', '张三', 'phone', '13800138001', 'address', '北京市朝阳区三里屯街道工体北路1号'), NOW(3), NOW(3)),
+(CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), '002'), 2, 1198.00, 100.00, 20.00, 1118.00, 'shipped', 'paid', JSON_OBJECT('name', '李四', 'phone', '13800138002', 'address', '上海市浦东新区陆家嘴环路1000号'), NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
--- 创建示例订单
-INSERT INTO orders (order_no, user_id, total_amount, status, payment_method, shipping_addr, contact_phone, contact_name, remark) VALUES
-('ORD202401150001001', 1, 11797.00, 'pending', 'alipay', '北京市朝阳区xxx路xxx号', '13800138001', '张三', '请尽快发货'),
-('ORD202401140002001', 2, 14999.00, 'paid', 'wechat', '上海市浦东新区xxx路xxx号', '13800138002', '李四', ''),
-('ORD202401130003001', 3, 4399.00, 'shipped', 'bank', '广州市天河区xxx路xxx号', '13800138003', '王五', '工作日配送')
-ON DUPLICATE KEY UPDATE order_no=VALUES(order_no);
+-- 插入订单明细数据
+INSERT INTO `order_items` (`order_id`, `product_id`, `product_name`, `product_sku`, `price`, `quantity`, `total_amount`, `created_at`, `updated_at`) VALUES
+(1, 1, 'iPhone 15 Pro', 'IPHONE15PRO128', 7999.00, 1, 7999.00, NOW(3), NOW(3)),
+(2, 4, 'Nike Air Force 1', 'NIKEAF1WHITE42', 899.00, 1, 899.00, NOW(3), NOW(3)),
+(2, 7, 'Zara女士连衣裙', 'ZARADRESS001M', 299.00, 1, 299.00, NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
--- 插入订单项
-INSERT INTO order_items (order_id, product_id, quantity, price, total) VALUES
--- 订单1的商品
-((SELECT id FROM orders WHERE order_no = 'ORD202401150001001'), 1, 1, 7999.00, 7999.00),
-((SELECT id FROM orders WHERE order_no = 'ORD202401150001001'), 3, 2, 1899.00, 3798.00),
+-- 更新产品销售数量和浏览次数
+UPDATE `products` SET `sale_count` = 1, `view_count` = FLOOR(RAND() * 1000) + 100 WHERE `id` = 1;
+UPDATE `products` SET `sale_count` = 1, `view_count` = FLOOR(RAND() * 800) + 50 WHERE `id` = 4;
+UPDATE `products` SET `sale_count` = 1, `view_count` = FLOOR(RAND() * 600) + 30 WHERE `id` = 7;
+UPDATE `products` SET `view_count` = FLOOR(RAND() * 500) + 20 WHERE `id` IN (2, 3, 5, 6, 8, 9, 10);
 
--- 订单2的商品
-((SELECT id FROM orders WHERE order_no = 'ORD202401140002001'), 2, 1, 14999.00, 14999.00),
+-- 插入操作日志示例
+INSERT INTO `operation_logs` (`user_id`, `operation`, `resource`, `resource_id`, `details`, `ip_address`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'CREATE', 'order', 1, JSON_OBJECT('order_no', CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), '001'), 'amount', 7999.00), '127.0.0.1', 'success', NOW(3), NOW(3)),
+(2, 'CREATE', 'order', 2, JSON_OBJECT('order_no', CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), '002'), 'amount', 1118.00), '127.0.0.1', 'success', NOW(3), NOW(3)),
+(1, 'LOGIN', 'user', 1, JSON_OBJECT('login_method', 'username'), '127.0.0.1', 'success', NOW(3), NOW(3)),
+(2, 'LOGIN', 'user', 2, JSON_OBJECT('login_method', 'email'), '127.0.0.1', 'success', NOW(3), NOW(3))
+ON DUPLICATE KEY UPDATE `updated_at` = NOW(3);
 
--- 订单3的商品
-((SELECT id FROM orders WHERE order_no = 'ORD202401130003001'), 4, 1, 4399.00, 4399.00)
-ON DUPLICATE KEY UPDATE quantity=VALUES(quantity);
+COMMIT;
 
--- 更新产品库存（模拟已售出的数量）
-UPDATE products SET stock = stock - 1 WHERE id = 1;  -- iPhone 15 Pro
-UPDATE products SET stock = stock - 2 WHERE id = 3;  -- AirPods Pro 3  
-UPDATE products SET stock = stock - 1 WHERE id = 2;  -- MacBook Pro 14
-UPDATE products SET stock = stock - 1 WHERE id = 4;  -- iPad Air 5 
+-- 查看插入结果统计
+SELECT 
+    '用户' as table_name, COUNT(*) as count FROM users
+UNION ALL SELECT 
+    '分类' as table_name, COUNT(*) as count FROM categories
+UNION ALL SELECT 
+    '产品' as table_name, COUNT(*) as count FROM products
+UNION ALL SELECT 
+    '地址' as table_name, COUNT(*) as count FROM user_addresses
+UNION ALL SELECT 
+    '购物车' as table_name, COUNT(*) as count FROM carts
+UNION ALL SELECT 
+    '订单' as table_name, COUNT(*) as count FROM orders
+UNION ALL SELECT 
+    '订单明细' as table_name, COUNT(*) as count FROM order_items
+UNION ALL SELECT 
+    '系统配置' as table_name, COUNT(*) as count FROM system_configs
+UNION ALL SELECT 
+    '操作日志' as table_name, COUNT(*) as count FROM operation_logs; 

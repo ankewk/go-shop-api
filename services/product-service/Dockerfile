@@ -15,7 +15,7 @@ COPY shared/ ./shared/
 # 复制服务源代码和依赖
 COPY services/product-service/ ./
 
-# 下载依赖（使用共享包）
+# 初始化模块和下载依赖
 RUN go mod init gin-project/services/product-service && \
     go mod edit -require gin-project/shared@v0.0.0 && \
     go mod edit -replace gin-project/shared=./shared && \

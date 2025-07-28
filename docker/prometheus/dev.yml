@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API网关监控
+  - job_name: 'api-gateway-dev'
+    static_configs:
+      - targets: ['api-gateway-dev:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # MySQL监控
+  - job_name: 'mysql-dev'
+    static_configs:
+      - targets: ['mysql-dev:3306']
+    scrape_interval: 60s
+
+  # Redis监控  
+  - job_name: 'redis-dev'
+    static_configs:
+      - targets: ['redis-dev:6379']
+    scrape_interval: 30s
+
+  # Docker容器监控
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['host.docker.internal:9323']
+    scrape_interval: 30s 

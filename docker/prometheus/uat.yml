@@ -1,0 +1,71 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+rule_files:
+
+scrape_configs:
+  # Prometheus自身监控
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API网关监控
+  - job_name: 'api-gateway-uat'
+    static_configs:
+      - targets: ['api-gateway-uat:9080']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # MySQL监控
+  - job_name: 'mysql-uat'
+    static_configs:
+      - targets: ['mysql-uat:3306']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Redis监控  
+  - job_name: 'redis-uat'
+    static_configs:
+      - targets: ['redis-uat:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  # Elasticsearch监控
+  - job_name: 'elasticsearch-uat'
+    static_configs:
+      - targets: ['elasticsearch-uat:9200']
+    metrics_path: '/_prometheus/metrics'
+    scrape_interval: 30s
+
+  # Nginx监控
+  - job_name: 'nginx-uat'
+    static_configs:
+      - targets: ['nginx-uat:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 30s
+
+  # 微服务监控（通过主机网络）
+  - job_name: 'user-service-uat'
+    static_configs:
+      - targets: ['host.docker.internal:9085']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'product-service-uat'
+    static_configs:
+      - targets: ['host.docker.internal:9082']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'cart-service-uat'
+    static_configs:
+      - targets: ['host.docker.internal:9083']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+
+  - job_name: 'order-service-uat'
+    static_configs:
+      - targets: ['host.docker.internal:9084']
+    metrics_path: '/metrics'
+    scrape_interval: 15s 

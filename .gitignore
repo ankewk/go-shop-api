@@ -49,6 +49,31 @@ docker-compose.override.yml
 .env.local
 .env.production
 
+# Development logs and uploads
+logs/
+uploads/
+
+# SSL certificates and keys
+docker/ssl/
+*.pem
+*.crt
+*.key
+
+# Environment specific files (keep .example files)
+config/*.env.local
+config/*.env.backup
+
+# Database scripts (keep example files)
+scripts/*.sql.backup
+
+# Docker diagnosis reports
+docker-diagnosis.txt
+*.diagnosis.txt
+
+# Monitoring data
+docker/prometheus/data/
+docker/grafana/data/
+
 # Backup scripts (optional)
 *-gbk.cmd
 *-en.cmd 

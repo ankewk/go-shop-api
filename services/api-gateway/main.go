@@ -254,7 +254,7 @@ func main() {
 	}
 	userServicePort := os.Getenv("USER_SERVICE_PORT")
 	if userServicePort == "" {
-		userServicePort = "8081"
+		userServicePort = "8085"
 	}
 
 	productServiceHost := os.Getenv("PRODUCT_SERVICE_HOST")
