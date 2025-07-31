@@ -21,14 +21,24 @@ echo   【 环境启动 】
 echo   1. 🔧 启动开发环境 (DEV)
 echo   2. 🧪 启动测试环境 (UAT)
 echo   3. 🚀 启动生产环境 (PROD)
-echo   0. 🛠️ 简化启动开发环境 (修复网络问题)
-echo   B. 🔄 备用端口启动开发环境 (避免端口冲突)
-echo   N. 🔥 无网络模式启动开发环境 (终极备用方案)
+echo   0. 🛠️ 一键启动开发环境 (自动修复网络问题)
 echo.
 echo   【 网络修复 】
 echo   Q. ⚡ 快速修复Docker网络问题
 echo   I. 🌐 修复Docker网络IP冲突问题
-echo   F. 🔧 完整诊断Docker网络问题
+echo.
+echo   【 故障诊断 】
+echo   S. 🔍 启动问题诊断 (推荐首选)
+echo   M. 📖 查看手动启动指南
+echo.
+echo   【 数据库工具 】
+echo   D. 🔧 数据库连接问题诊断
+echo   G. 🚀 启动Go微服务
+echo   W. 📖 打开Swagger文档
+echo.
+echo   【 本地启动 】
+echo   L. 🏠 本地启动器 (推荐)
+echo   N. 🚀 启动Go微服务(非Docker)
 echo.
 echo   【 环境管理 】
 echo   4. 📊 检查所有环境状态
@@ -40,17 +50,23 @@ echo   8. 📋 查看环境配置对比
 echo   9. 📖 查看帮助文档
 echo   X. ❌ 退出程序
 echo.
-set /p choice=请输入选项 (0-9,B,N,Q,I,F,X): 
+set /p choice=请输入选项 (0-9,B,Q,I,S,M,E,D,G,W,N,S,X): 
 
 if "%choice%"=="1" goto START_DEV
 if "%choice%"=="2" goto START_UAT
 if "%choice%"=="3" goto START_PROD
-if "%choice%"=="0" goto START_DEV_SIMPLE
-if /i "%choice%"=="B" goto START_DEV_BACKUP
-if /i "%choice%"=="N" goto START_DEV_NO_NETWORK
+if "%choice%"=="0" goto START_DEV_AUTO
 if /i "%choice%"=="Q" goto QUICK_FIX
 if /i "%choice%"=="I" goto FIX_IP_CONFLICT
-if /i "%choice%"=="F" goto FULL_DIAGNOSIS
+if /i "%choice%"=="S" goto STARTUP_DIAGNOSIS
+if /i "%choice%"=="M" goto SHOW_MANUAL_GUIDE
+
+if /i "%choice%"=="D" goto DATABASE_DIAGNOSIS
+if /i "%choice%"=="G" goto START_GO_SERVICES
+if /i "%choice%"=="W" goto OPEN_SWAGGER
+if /i "%choice%"=="L" goto START_LOCAL
+if /i "%choice%"=="N" goto START_NO_DOCKER
+
 if "%choice%"=="4" goto CHECK_ALL
 if "%choice%"=="5" goto STOP_ENV
 if "%choice%"=="6" goto CLEAN_ALL
@@ -80,23 +96,13 @@ echo 🚀 正在启动生产环境 (PROD)...
 call scripts\start-prod.cmd
 goto MAIN_MENU
 
-:START_DEV_SIMPLE
+:START_DEV_AUTO
 echo.
-echo 🛠️ 正在简化启动开发环境 (修复网络问题)...
-call start-dev-simple.cmd
+echo 🛠️ 正在一键启动开发环境 (自动修复网络问题)...
+call start-dev-auto.cmd
 goto MAIN_MENU
 
-:START_DEV_BACKUP
-echo.
-echo 🔄 正在启动开发环境 (备用端口)...
-call start-dev-backup.cmd
-goto MAIN_MENU
 
-:START_DEV_NO_NETWORK
-echo.
-echo 🔥 正在启动开发环境 (无网络模式)...
-call start-dev-no-network.cmd
-goto MAIN_MENU
 
 :QUICK_FIX
 echo.
@@ -110,11 +116,54 @@ echo 🌐 正在修复Docker网络IP冲突问题...
 call fix-network-ip-conflict.cmd
 goto MAIN_MENU
 
-:FULL_DIAGNOSIS
+:STARTUP_DIAGNOSIS
 echo.
-echo 🔧 正在进行完整Docker诊断...
-call docker-network-fix-ultimate.cmd
+echo 🔍 正在进行启动问题诊断...
+call startup-diagnosis.cmd
 goto MAIN_MENU
+
+:SHOW_MANUAL_GUIDE
+echo.
+echo 📖 正在打开手动启动指南...
+start notepad manual-startup-guide.md
+echo ✅ 手动启动指南已在记事本中打开
+echo.
+pause
+goto MAIN_MENU
+
+
+
+:DATABASE_DIAGNOSIS
+echo.
+echo 🔧 正在进行数据库连接诊断...
+call database-connection-fix.cmd
+goto MAIN_MENU
+
+:START_GO_SERVICES
+echo.
+echo 🚀 正在启动Go微服务...
+call start-services-no-docker.cmd
+goto MAIN_MENU
+
+:OPEN_SWAGGER
+echo.
+echo 📖 正在打开Swagger文档...
+call open-swagger.cmd
+goto MAIN_MENU
+
+:START_LOCAL
+echo.
+echo 🏠 正在启动本地启动器...
+call start-local.cmd
+goto MAIN_MENU
+
+:START_NO_DOCKER
+echo.
+echo 🚀 正在启动Go微服务(非Docker模式)...
+call start-services-no-docker.cmd
+goto MAIN_MENU
+
+
 
 :CHECK_ALL
 cls
