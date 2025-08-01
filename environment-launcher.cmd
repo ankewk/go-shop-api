@@ -36,8 +36,9 @@ echo   D. 🔧 数据库连接问题诊断
 echo   G. 🚀 启动Go微服务
 echo   W. 📖 打开Swagger文档
 echo.
-echo   【 本地启动 】
+echo   【 本地启动  】
 echo   L. 🏠 本地启动器 (推荐)
+echo   A. 🚀 启动所有微服务 (集群模式)
 echo   N. 🚀 启动Go微服务(非Docker)
 echo.
 echo   【 环境管理 】
@@ -65,6 +66,7 @@ if /i "%choice%"=="D" goto DATABASE_DIAGNOSIS
 if /i "%choice%"=="G" goto START_GO_SERVICES
 if /i "%choice%"=="W" goto OPEN_SWAGGER
 if /i "%choice%"=="L" goto START_LOCAL
+if /i "%choice%"=="A" goto START_ALL_MICROSERVICES
 if /i "%choice%"=="N" goto START_NO_DOCKER
 
 if "%choice%"=="4" goto CHECK_ALL
@@ -155,6 +157,12 @@ goto MAIN_MENU
 echo.
 echo 🏠 正在启动本地启动器...
 call start-local.cmd
+goto MAIN_MENU
+
+:START_ALL_MICROSERVICES
+echo.
+echo 🚀 正在启动所有微服务...
+call start-all-microservices.cmd
 goto MAIN_MENU
 
 :START_NO_DOCKER
