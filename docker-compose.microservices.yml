@@ -1,29 +1,129 @@
 version: '3.8'
 
 services:
-  # 数据库
-  postgres:
+  # 数据库 - 每个服务独立数据库
+  postgres-auth:
     image: postgres:13
-    container_name: go-shop-postgres
+    container_name: go-shop-auth-db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: go_shop
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+      POSTGRES_DB: auth_db
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - auth_db_data:/var/lib/postgresql/data
     networks:
       - go-shop-network
 
-  redis:
+  postgres-user:
+    image: postgres:13
+    container_name: go-shop-user-db
+    environment:
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: user_pass
+      POSTGRES_DB: user_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    networks:
+      - go-shop-network
+
+  postgres-product:
+    image: postgres:13
+    container_name: go-shop-product-db
+    environment:
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_pass
+      POSTGRES_DB: product_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    networks:
+      - go-shop-network
+
+  postgres-order:
+    image: postgres:13
+    container_name: go-shop-order-db
+    environment:
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+      POSTGRES_DB: order_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    networks:
+      - go-shop-network
+
+  postgres-payment:
+    image: postgres:13
+    container_name: go-shop-payment-db
+    environment:
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_pass
+      POSTGRES_DB: payment_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+    networks:
+      - go-shop-network
+
+  postgres-notification:
+    image: postgres:13
+    container_name: go-shop-notification-db
+    environment:
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification_pass
+      POSTGRES_DB: notification_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+    networks:
+      - go-shop-network
+
+  # Redis - 缓存服务
+  redis-auth:
     image: redis:7-alpine
-    container_name: go-shop-redis
+    container_name: go-shop-auth-redis
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - auth_redis_data:/data
+    networks:
+      - go-shop-network
+
+  redis-user:
+    image: redis:7-alpine
+    container_name: go-shop-user-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - user_redis_data:/data
+    networks:
+      - go-shop-network
+
+  redis-product:
+    image: redis:7-alpine
+    container_name: go-shop-product-redis
+    ports:
+      - "6381:6379"
+    volumes:
+      - product_redis_data:/data
+    networks:
+      - go-shop-network
+
+  redis-order:
+    image: redis:7-alpine
+    container_name: go-shop-order-redis
+    ports:
+      - "6382:6379"
+    volumes:
+      - order_redis_data:/data
     networks:
       - go-shop-network
 
@@ -37,7 +137,7 @@ services:
       - "8080:8080"
     environment:
       - PORT=:8080
-      - REDIS_URL=redis:6379
+      - REDIS_URL=redis-auth:6379
       - JWT_SECRET=your-secret-key
       - AUTH_SERVICE_URL=auth-service:8081
       - USER_SERVICE_URL=user-service:8082
@@ -48,7 +148,7 @@ services:
       - NOTIFICATION_SERVICE_URL=notification-service:8087
       - SEARCH_SERVICE_URL=search-service:8088
     depends_on:
-      - redis
+      - redis-auth
       - auth-service
       - user-service
     networks:
@@ -64,15 +164,17 @@ services:
       - "8081:8081"
     environment:
       - PORT=:8081
-      - DB_HOST=postgres
+      - DB_HOST=postgres-auth
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=auth_user
+      - DB_PASSWORD=auth_pass
       - DB_NAME=auth_db
+      - REDIS_URL=redis-auth:6379
       - JWT_SECRET=your-secret-key
       - JWT_EXPIRY=24h
     depends_on:
-      - postgres
+      - postgres-auth
+      - redis-auth
     networks:
       - go-shop-network
 
@@ -86,13 +188,15 @@ services:
       - "8082:8082"
     environment:
       - PORT=:8082
-      - DB_HOST=postgres
+      - DB_HOST=postgres-user
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=user_user
+      - DB_PASSWORD=user_pass
       - DB_NAME=user_db
+      - REDIS_URL=redis-user:6379
     depends_on:
-      - postgres
+      - postgres-user
+      - redis-user
     networks:
       - go-shop-network
 
@@ -106,15 +210,15 @@ services:
       - "8083:8083"
     environment:
       - PORT=:8083
-      - DB_HOST=postgres
+      - DB_HOST=postgres-order
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=order_user
+      - DB_PASSWORD=order_pass
       - DB_NAME=order_db
-      - REDIS_URL=redis:6379
+      - REDIS_URL=redis-order:6379
     depends_on:
-      - postgres
-      - redis
+      - postgres-order
+      - redis-order
     networks:
       - go-shop-network
 
@@ -128,15 +232,15 @@ services:
       - "8084:8084"
     environment:
       - PORT=:8084
-      - DB_HOST=postgres
+      - DB_HOST=postgres-product
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=product_user
+      - DB_PASSWORD=product_pass
       - DB_NAME=product_db
-      - REDIS_URL=redis:6379
+      - REDIS_URL=redis-product:6379
     depends_on:
-      - postgres
-      - redis
+      - postgres-product
+      - redis-product
     networks:
       - go-shop-network
 
@@ -150,9 +254,9 @@ services:
       - "8085:8085"
     environment:
       - PORT=:8085
-      - REDIS_URL=redis:6379
+      - REDIS_URL=redis-order:6379
     depends_on:
-      - redis
+      - redis-order
     networks:
       - go-shop-network
 
@@ -166,13 +270,13 @@ services:
       - "8086:8086"
     environment:
       - PORT=:8086
-      - DB_HOST=postgres
+      - DB_HOST=postgres-payment
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=payment_user
+      - DB_PASSWORD=payment_pass
       - DB_NAME=payment_db
     depends_on:
-      - postgres
+      - postgres-payment
     networks:
       - go-shop-network
 
@@ -186,13 +290,13 @@ services:
       - "8087:8087"
     environment:
       - PORT=:8087
-      - DB_HOST=postgres
+      - DB_HOST=postgres-notification
       - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_USER=notification_user
+      - DB_PASSWORD=notification_pass
       - DB_NAME=notification_db
     depends_on:
-      - postgres
+      - postgres-notification
     networks:
       - go-shop-network
 
@@ -270,8 +374,16 @@ services:
       - go-shop-network
 
 volumes:
-  postgres_data:
-  redis_data:
+  auth_db_data:
+  user_db_data:
+  product_db_data:
+  order_db_data:
+  payment_db_data:
+  notification_db_data:
+  auth_redis_data:
+  user_redis_data:
+  product_redis_data:
+  order_redis_data:
   elasticsearch_data:
   rabbitmq_data:
   prometheus_data:
