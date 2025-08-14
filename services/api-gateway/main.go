@@ -1,304 +1,91 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"strings"
+	"os/signal"
+	"syscall"
 	"time"
 
-	_ "gin-project/services/api-gateway/docs"
-	"gin-project/shared/response"
-
 	"github.com/gin-gonic/gin"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/go-redis/redis/v8"
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/time/rate"
 )
 
-// ServiceConfig 服务配置
-type ServiceConfig struct {
-	Name string `json:"name"`
-	Host string `json:"host"`
-	Port string `json:"port"`
-	URL  string `json:"url"`
+type APIGateway struct {
+	router *gin.Engine
+	redis  *redis.Client
+	config *Config
 }
 
-// Gateway API网关
-type Gateway struct {
-	services map[string]*ServiceConfig
-	client   *http.Client
+type Config struct {
+	Port          string
+	RedisURL      string
+	Services      map[string]string
+	JWTSecret     string
+	RateLimitRPS  int
+	RateLimitBurst int
 }
 
-// NewGateway 创建网关实例
-func NewGateway() *Gateway {
-	return &Gateway{
-		services: make(map[string]*ServiceConfig),
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+type RateLimiter struct {
+	limiters map[string]*rate.Limiter
+}
+
+func NewRateLimiter() *RateLimiter {
+	return &RateLimiter{
+		limiters: make(map[string]*rate.Limiter),
 	}
 }
 
-// RegisterService 注册服务
-func (gw *Gateway) RegisterService(name, host, port string) {
-	url := fmt.Sprintf("http://%s:%s", host, port)
-	gw.services[name] = &ServiceConfig{
-		Name: name,
-		Host: host,
-		Port: port,
-		URL:  url,
-	}
-	log.Printf("服务注册成功: %s -> %s", name, url)
-}
-
-// ProxyRequest 代理请求到后端服务
-func (gw *Gateway) ProxyRequest(c *gin.Context) {
-	path := c.Request.URL.Path
-
-	// 解析服务名称和目标路径
-	var serviceName string
-	var targetPath string
-
-	if strings.HasPrefix(path, "/api/v1/users") {
-		serviceName = "user-service"
-		targetPath = path
-	} else if strings.HasPrefix(path, "/api/v1/products") {
-		serviceName = "product-service"
-		targetPath = path
-	} else if strings.HasPrefix(path, "/api/v1/cart") {
-		serviceName = "cart-service"
-		targetPath = path
-	} else if strings.HasPrefix(path, "/api/v1/orders") {
-		serviceName = "order-service"
-		targetPath = path
-	} else {
-		response.NotFound(c, "服务不存在")
-		return
-	}
-
-	// 获取服务配置
-	service, exists := gw.services[serviceName]
+func (rl *RateLimiter) getLimiter(key string) *rate.Limiter {
+	limiter, exists := rl.limiters[key]
 	if !exists {
-		response.ServiceUnavailable(c, "服务不可用", serviceName+" 服务未注册")
-		return
+		limiter = rate.NewLimiter(rate.Limit(100), 1000) // 100 RPS, burst 1000
+		rl.limiters[key] = limiter
 	}
-
-	// 构建目标URL
-	targetURL := service.URL + targetPath
-	if c.Request.URL.RawQuery != "" {
-		targetURL += "?" + c.Request.URL.RawQuery
-	}
-
-	// 读取请求体
-	var bodyBytes []byte
-	if c.Request.Body != nil {
-		bodyBytes, _ = io.ReadAll(c.Request.Body)
-		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	}
-
-	// 创建新请求
-	req, err := http.NewRequest(c.Request.Method, targetURL, bytes.NewBuffer(bodyBytes))
-	if err != nil {
-		response.InternalServerError(c, "创建请求失败", err.Error())
-		return
-	}
-
-	// 复制请求头
-	for name, values := range c.Request.Header {
-		for _, value := range values {
-			req.Header.Add(name, value)
-		}
-	}
-
-	// 添加网关标识
-	req.Header.Set("X-Gateway", "gin-api-gateway")
-	req.Header.Set("X-Forwarded-For", c.ClientIP())
-
-	// 发送请求
-	resp, err := gw.client.Do(req)
-	if err != nil {
-		response.ServiceUnavailable(c, "服务请求失败", err.Error())
-		return
-	}
-	defer resp.Body.Close()
-
-	// 读取响应
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		response.InternalServerError(c, "读取响应失败", err.Error())
-		return
-	}
-
-	// 复制响应头
-	for name, values := range resp.Header {
-		for _, value := range values {
-			c.Header(name, value)
-		}
-	}
-
-	// 返回响应
-	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), respBody)
+	return limiter
 }
 
-// HealthCheck 健康检查
-func (gw *Gateway) HealthCheck(c *gin.Context) {
-	services := make(map[string]interface{})
-
-	for name, service := range gw.services {
-		healthURL := service.URL + "/health"
-		resp, err := gw.client.Get(healthURL)
-		if err != nil {
-			services[name] = map[string]interface{}{
-				"status": "unhealthy",
-				"error":  err.Error(),
-			}
-			continue
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == 200 {
-			services[name] = map[string]interface{}{
-				"status": "healthy",
-				"url":    service.URL,
-			}
-		} else {
-			services[name] = map[string]interface{}{
-				"status": "unhealthy",
-				"code":   resp.StatusCode,
-			}
-		}
-	}
-
-	response.Success(c, map[string]interface{}{
-		"gateway":   "healthy",
-		"services":  services,
-		"timestamp": time.Now(),
-	}, "网关健康检查")
+func (rl *RateLimiter) Allow(key string) bool {
+	return rl.getLimiter(key).Allow()
 }
 
-// ListServices 列出所有注册的服务
-func (gw *Gateway) ListServices(c *gin.Context) {
-	services := make([]ServiceConfig, 0, len(gw.services))
-	for _, service := range gw.services {
-		services = append(services, *service)
+func NewAPIGateway(config *Config) *APIGateway {
+	// 初始化Redis连接
+	rdb := redis.NewClient(&redis.Options{
+		Addr: config.RedisURL,
+	})
+
+	gateway := &APIGateway{
+		router: gin.Default(),
+		redis:  rdb,
+		config: config,
 	}
 
-	response.Success(c, services, "服务列表获取成功")
+	// 配置中间件
+	gateway.setupMiddleware()
+	gateway.setupRoutes()
+
+	return gateway
 }
 
-// Welcome 欢迎页面
-func (gw *Gateway) Welcome(c *gin.Context) {
-	response.Success(c, map[string]interface{}{
-		"message":      "Welcome to Gin E-commerce Microservices!",
-		"version":      "2.0.0",
-		"services":     len(gw.services),
-		"frontend_url": "/shop",
-		"api_features": []string{
-			"用户管理",
-			"商品管理",
-			"购物车管理",
-			"订单管理",
-			"状态监控",
-		},
-		"gateway_features": []string{
-			"智能路由",
-			"负载均衡",
-			"健康检查",
-			"服务发现",
-			"跨域支持",
-		},
-	}, "欢迎使用电商微服务平台")
+func (g *APIGateway) setupMiddleware() {
+	// 全局中间件
+	g.router.Use(gin.Logger())
+	g.router.Use(gin.Recovery())
+	g.router.Use(g.corsMiddleware())
+	g.router.Use(g.rateLimitMiddleware())
 }
 
-// GetAPIRoutes 获取API路由信息
-func (gw *Gateway) GetAPIRoutes(c *gin.Context) {
-	routes := map[string]interface{}{
-		"user_service": map[string][]string{
-			"GET":    {"/api/v1/users", "/api/v1/users/{id}"},
-			"POST":   {"/api/v1/users"},
-			"PUT":    {"/api/v1/users/{id}"},
-			"DELETE": {"/api/v1/users/{id}"},
-		},
-		"product_service": map[string][]string{
-			"GET":    {"/api/v1/products", "/api/v1/products/{id}"},
-			"POST":   {"/api/v1/products"},
-			"PUT":    {"/api/v1/products/{id}"},
-			"DELETE": {"/api/v1/products/{id}"},
-		},
-		"cart_service": map[string][]string{
-			"GET":    {"/api/v1/cart", "/api/v1/cart/summary"},
-			"POST":   {"/api/v1/cart/items"},
-			"PUT":    {"/api/v1/cart/items/{item_id}"},
-			"DELETE": {"/api/v1/cart", "/api/v1/cart/items/{item_id}"},
-		},
-		"order_service": map[string][]string{
-			"GET":  {"/api/v1/orders", "/api/v1/orders/{id}", "/api/v1/orders/summary"},
-			"POST": {"/api/v1/orders"},
-			"PUT":  {"/api/v1/orders/{id}/status", "/api/v1/orders/{id}/cancel"},
-		},
-	}
-
-	response.Success(c, routes, "API路由信息")
-}
-
-func main() {
-	// 创建网关实例
-	gateway := NewGateway()
-
-	// 注册微服务
-	userServiceHost := os.Getenv("USER_SERVICE_HOST")
-	if userServiceHost == "" {
-		userServiceHost = "localhost"
-	}
-	userServicePort := os.Getenv("USER_SERVICE_PORT")
-	if userServicePort == "" {
-		userServicePort = "8085"
-	}
-
-	productServiceHost := os.Getenv("PRODUCT_SERVICE_HOST")
-	if productServiceHost == "" {
-		productServiceHost = "localhost"
-	}
-	productServicePort := os.Getenv("PRODUCT_SERVICE_PORT")
-	if productServicePort == "" {
-		productServicePort = "8082"
-	}
-
-	cartServiceHost := os.Getenv("CART_SERVICE_HOST")
-	if cartServiceHost == "" {
-		cartServiceHost = "localhost"
-	}
-	cartServicePort := os.Getenv("CART_SERVICE_PORT")
-	if cartServicePort == "" {
-		cartServicePort = "8083"
-	}
-
-	orderServiceHost := os.Getenv("ORDER_SERVICE_HOST")
-	if orderServiceHost == "" {
-		orderServiceHost = "localhost"
-	}
-	orderServicePort := os.Getenv("ORDER_SERVICE_PORT")
-	if orderServicePort == "" {
-		orderServicePort = "8084"
-	}
-
-	gateway.RegisterService("user-service", userServiceHost, userServicePort)
-	gateway.RegisterService("product-service", productServiceHost, productServicePort)
-	gateway.RegisterService("cart-service", cartServiceHost, cartServicePort)
-	gateway.RegisterService("order-service", orderServiceHost, orderServicePort)
-
-	// 创建路由
-	r := gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-
-	// 添加CORS支持
-	r.Use(func(c *gin.Context) {
+func (g *APIGateway) corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -306,65 +93,219 @@ func main() {
 		}
 
 		c.Next()
-	})
+	}
+}
 
-	// 静态文件服务（前端）
-	r.Static("/frontend", "./frontend")
-	r.StaticFile("/shop", "./frontend/index.html")
+func (g *APIGateway) rateLimitMiddleware() gin.HandlerFunc {
+	rl := NewRateLimiter()
+	
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		if !rl.Allow(clientIP) {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "rate limit exceeded",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
 
-	// 根路径重定向到商城
-	r.GET("/", func(c *gin.Context) {
-		c.Redirect(http.StatusFound, "/shop")
-	})
+func (g *APIGateway) authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization header required"})
+			c.Abort()
+			return
+		}
 
-	// Swagger文档
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+		tokenString := authHeader[len("Bearer "):]
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(g.config.JWTSecret), nil
+		})
 
-	// 网关管理路由
-	r.GET("/gateway", gateway.Welcome)
-	r.GET("/health", gateway.HealthCheck)
-	r.GET("/services", gateway.ListServices)
-	r.GET("/api-routes", gateway.GetAPIRoutes)
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.Abort()
+			return
+		}
 
-	// API代理路由
-	api := r.Group("/api/v1")
+		claims := token.Claims.(jwt.MapClaims)
+		c.Set("user_id", claims["user_id"])
+		c.Set("user_role", claims["role"])
+		c.Next()
+	}
+}
+
+func (g *APIGateway) setupRoutes() {
+	// 健康检查
+	g.router.GET("/health", g.healthHandler)
+
+	// 公开路由
+	public := g.router.Group("/api/v1")
 	{
-		// 用户服务代理
-		api.Any("/users", gateway.ProxyRequest)
-		api.Any("/users/*path", gateway.ProxyRequest)
-
-		// 产品服务代理
-		api.Any("/products", gateway.ProxyRequest)
-		api.Any("/products/*path", gateway.ProxyRequest)
-
-		// 购物车服务代理
-		api.Any("/cart", gateway.ProxyRequest)
-		api.Any("/cart/*path", gateway.ProxyRequest)
-
-		// 订单服务代理
-		api.Any("/orders", gateway.ProxyRequest)
-		api.Any("/orders/*path", gateway.ProxyRequest)
+		// 认证相关
+		public.POST("/auth/login", g.proxyHandler(g.config.Services["auth-service"]))
+		public.POST("/auth/register", g.proxyHandler(g.config.Services["auth-service"]))
+		public.GET("/products", g.proxyHandler(g.config.Services["product-service"]))
+		public.GET("/products/:id", g.proxyHandler(g.config.Services["product-service"]))
+		public.GET("/search", g.proxyHandler(g.config.Services["search-service"]))
 	}
 
-	// 404处理
-	r.NoRoute(func(c *gin.Context) {
-		response.NotFound(c, "页面不存在")
-	})
+	// 需要认证的路由
+	protected := g.router.Group("/api/v1")
+	protected.Use(g.authMiddleware())
+	{
+		// 用户相关
+		protected.GET("/users/:id", g.proxyHandler(g.config.Services["user-service"]))
+		protected.PUT("/users/:id", g.proxyHandler(g.config.Services["user-service"]))
+		
+		// 购物车
+		protected.GET("/cart", g.proxyHandler(g.config.Services["cart-service"]))
+		protected.POST("/cart/items", g.proxyHandler(g.config.Services["cart-service"]))
+		protected.PUT("/cart/items/:id", g.proxyHandler(g.config.Services["cart-service"]))
+		protected.DELETE("/cart/items/:id", g.proxyHandler(g.config.Services["cart-service"]))
+		
+		// 订单
+		protected.POST("/orders", g.proxyHandler(g.config.Services["order-service"]))
+		protected.GET("/orders/:id", g.proxyHandler(g.config.Services["order-service"]))
+		protected.GET("/orders/user/:userId", g.proxyHandler(g.config.Services["order-service"]))
+		
+		// 支付
+		protected.POST("/payments", g.proxyHandler(g.config.Services["payment-service"]))
+		protected.GET("/payments/:id", g.proxyHandler(g.config.Services["payment-service"]))
+		
+		// 通知
+		protected.GET("/notifications", g.proxyHandler(g.config.Services["notification-service"]))
+		protected.PUT("/notifications/:id/read", g.proxyHandler(g.config.Services["notification-service"]))
+	}
+}
 
-	// 获取端口
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // 网关默认端口
+func (g *APIGateway) proxyHandler(targetService string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// 构建目标URL
+		targetURL := fmt.Sprintf("http://%s%s", targetService, c.Request.URL.Path)
+		
+		// 创建新的请求
+		proxyReq, err := http.NewRequest(c.Request.Method, targetURL, c.Request.Body)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create proxy request"})
+			return
+		}
+
+		// 复制请求头
+		for key, values := range c.Request.Header {
+			for _, value := range values {
+				proxyReq.Header.Add(key, value)
+			}
+		}
+
+		// 添加用户上下文
+		if userID, exists := c.Get("user_id"); exists {
+			proxyReq.Header.Set("X-User-ID", fmt.Sprintf("%v", userID))
+		}
+		if userRole, exists := c.Get("user_role"); exists {
+			proxyReq.Header.Set("X-User-Role", fmt.Sprintf("%v", userRole))
+		}
+
+		// 发送请求
+		client := &http.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(proxyReq)
+		if err != nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "service unavailable"})
+			return
+		}
+		defer resp.Body.Close()
+
+		// 复制响应头
+		for key, values := range resp.Header {
+			for _, value := range values {
+				c.Header(key, value)
+			}
+		}
+
+		// 设置状态码
+		c.Status(resp.StatusCode)
+		
+		// 复制响应体
+		_, err = io.Copy(c.Writer, resp.Body)
+		if err != nil {
+			log.Printf("Error copying response body: %v", err)
+		}
+	}
+}
+
+func (g *APIGateway) healthHandler(c *gin.Context) {
+	// 检查所有下游服务
+	health := map[string]interface{}{
+		"status": "healthy",
+		"services": make(map[string]string),
+		"timestamp": time.Now().Format(time.RFC3339),
 	}
 
-	log.Printf("🚀 电商微服务API网关启动在端口: %s", port)
-	log.Printf("📋 注册的微服务:")
-	for name, service := range gateway.services {
-		log.Printf("  ✅ %s: %s", name, service.URL)
+	for serviceName, serviceURL := range g.config.Services {
+		resp, err := http.Get(fmt.Sprintf("http://%s/health", serviceURL))
+		if err != nil || resp.StatusCode != http.StatusOK {
+			health["services"].(map[string]string)[serviceName] = "unhealthy"
+		} else {
+			health["services"].(map[string]string)[serviceName] = "healthy"
+		}
 	}
-	log.Printf("🌐 商城地址: http://localhost:%s/shop", port)
-	log.Printf("📖 API文档: http://localhost:%s/api-routes", port)
-	log.Printf("🔧 网关管理: http://localhost:%s/gateway", port)
 
-	r.Run(":" + port)
+	c.JSON(http.StatusOK, health)
+}
+
+func (g *APIGateway) Start() error {
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: g.router,
+	}
+
+	go func() {
+		log.Printf("API Gateway starting on port %s", g.config.Port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start API Gateway: %v", err)
+		}
+	}()
+
+	// 等待中断信号
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutting down API Gateway...")
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	return server.Shutdown(ctx)
+}
+
+func main() {
+	config := &Config{
+		Port:    ":8080",
+		RedisURL: "localhost:6379",
+		Services: map[string]string{
+			"auth-service":       "localhost:8081",
+			"user-service":       "localhost:8082",
+			"order-service":      "localhost:8083",
+			"product-service":    "localhost:8084",
+			"cart-service":       "localhost:8085",
+			"payment-service":    "localhost:8086",
+			"notification-service": "localhost:8087",
+			"search-service":     "localhost:8088",
+		},
+		JWTSecret:      "your-secret-key",
+		RateLimitRPS:   100,
+		RateLimitBurst: 1000,
+	}
+
+	gateway := NewAPIGateway(config)
+	if err := gateway.Start(); err != nil {
+		log.Fatal("Failed to start API Gateway:", err)
+	}
 }
