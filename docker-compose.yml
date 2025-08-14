@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    depends_on:
+      - postgres-gateway
+    networks:
+      - microservices-network
+
+  # Auth Service
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - DATABASE_URL=host=postgres-auth user=auth_user password=auth_password dbname=auth_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-auth
+    networks:
+      - microservices-network
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - DATABASE_URL=host=postgres-user user=user_user password=user_password dbname=user_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-user
+    networks:
+      - microservices-network
+
+  # Product Service
+  product-service:
+    build: ./services/product-service
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=8083
+      - DATABASE_URL=host=postgres-product user=product_user password=product_password dbname=product_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-product
+    networks:
+      - microservices-network
+
+  # Order Service
+  order-service:
+    build: ./services/order-service
+    ports:
+      - "8084:8084"
+    environment:
+      - PORT=8084
+      - DATABASE_URL=host=postgres-order user=order_user password=order_password dbname=order_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-order
+    networks:
+      - microservices-network
+
+  # Cart Service
+  cart-service:
+    build: ./services/cart-service
+    ports:
+      - "8085:8085"
+    environment:
+      - PORT=8085
+      - DATABASE_URL=host=postgres-cart user=cart_user password=cart_password dbname=cart_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-cart
+    networks:
+      - microservices-network
+
+  # Payment Service
+  payment-service:
+    build: ./services/payment-service
+    ports:
+      - "8086:8086"
+    environment:
+      - PORT=8086
+      - DATABASE_URL=host=postgres-payment user=payment_user password=payment_password dbname=payment_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-payment
+    networks:
+      - microservices-network
+
+  # Notification Service
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "8087:8087"
+    environment:
+      - PORT=8087
+      - DATABASE_URL=host=postgres-notification user=notification_user password=notification_password dbname=notification_db port=5432 sslmode=disable
+    depends_on:
+      - postgres-notification
+    networks:
+      - microservices-network
+
+  # PostgreSQL for each service
+  postgres-gateway:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: gateway_db
+      POSTGRES_USER: gateway_user
+      POSTGRES_PASSWORD: gateway_password
+    volumes:
+      - postgres_gateway_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-auth:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_password
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-user:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: user_user
+      POSTGRES_PASSWORD: user_password
+    volumes:
+      - postgres_user_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-product:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: product_db
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: product_password
+    volumes:
+      - postgres_product_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-order:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_password
+    volumes:
+      - postgres_order_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-cart:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cart_db
+      POSTGRES_USER: cart_user
+      POSTGRES_PASSWORD: cart_password
+    volumes:
+      - postgres_cart_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-payment:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_password
+    volumes:
+      - postgres_payment_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  postgres-notification:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: notification_user
+      POSTGRES_PASSWORD: notification_password
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+volumes:
+  postgres_gateway_data:
+  postgres_auth_data:
+  postgres_user_data:
+  postgres_product_data:
+  postgres_order_data:
+  postgres_cart_data:
+  postgres_payment_data:
+  postgres_notification_data:
+
+networks:
+  microservices-network:
+    driver: bridge
