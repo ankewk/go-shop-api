@@ -1,333 +1,341 @@
-# Go Shop 微服务电商平台
+# 🛒 Go Shop 微服务电商平台
 
-基于 Go + Gin 框架的微服务电商平台，支持完全容器化部署。
+基于 Go + Gin 框架的现代化微服务电商平台，支持完全容器化部署和本地开发。
 
-> **📢 重要提示**：
-> - 如果遇到中文乱码：请参考 [编码问题解决方案](./README-编码问题解决方案.md)
-> - 如果遇到Docker网络错误：请参考 [Docker网络问题解决指南](./README-Docker网络问题解决.md)
-> - 如果遇到IP地址池冲突：运行 `fix-network-ip-conflict.cmd`
-
-## 🌍 多环境部署 (推荐)
-
-支持三个独立环境：**开发环境(DEV)**、**测试环境(UAT)**、**生产环境(PROD)**
-
-### 🚀 统一环境管理器
-
-```bash
-# Windows 用户：双击运行环境选择器
-environment-launcher.cmd
-
-# 选择对应环境：
-# 1. 🔧 启动开发环境 (DEV)
-# 2. 🧪 启动测试环境 (UAT)  
-# 3. 🚀 启动生产环境 (PROD)
-```
-
-### 🌐 环境对比
-
-| 特性 | 开发环境(DEV) | 测试环境(UAT) | 生产环境(PROD) |
-|------|---------------|---------------|----------------|
-| **API网关** | 8080 | 9080 | 7080,7081 |
-| **数据库** | 3307 | 3308 | 3309,3310 |
-| **模式** | debug | release | release |
-| **架构** | 单机 | 单机 | 主从高可用 |
-| **监控** | 基础 | 增强 | 完整 |
-| **SSL** | ❌ | ❌ | ✅ |
-
-### ⚡ 直接启动
-
-```bash
-# 开发环境
-scripts\start-dev.cmd
-
-# 测试环境  
-scripts\start-uat.cmd
-
-# 生产环境
-scripts\start-prod.cmd
-```
-
-## 🚀 快速启动 Docker 微服务 (简化版)
-
-```bash
-# Windows 用户：双击运行或命令行执行
-docker-microservices-start.cmd
-
-# Linux/macOS 用户
-docker-compose -f docker-compose.microservices.yml up -d --build
-```
-
-### 📋 简化版服务端口
-- **API网关**: 8080 (统一入口)
-- **用户服务**: 8085 
-- **产品服务**: 8082
-- **购物车服务**: 8083
-- **订单服务**: 8084
-- **MySQL数据库**: 3307
-
-访问：http://localhost:8080
-
-## 功能特性
+## 🌟 核心特性
 
 ### 🏗️ 架构特性
-- ✅ **微服务架构** - 独立可扩展的服务设计
-- ✅ **多环境支持** - DEV/UAT/PROD独立环境部署
-- ✅ **容器化部署** - Docker + Docker Compose
-- ✅ **MVC分层架构** - 清晰的代码组织结构
-- ✅ **RESTful API 设计** - 标准的REST接口
+- **微服务架构** - 独立可扩展的服务设计
+- **多环境支持** - DEV/UAT/PROD独立环境部署
+- **容器化部署** - Docker + Docker Compose
+- **API网关** - 统一入口，路由分发，负载均衡
+- **服务发现** - 自动服务注册和发现
 
 ### 💾 数据存储
-- ✅ **MySQL 数据库集成** - 完整的数据库支持
-- ✅ **GORM ORM 框架** - 强大的对象关系映射
-- ✅ **Redis 缓存** - 高性能数据缓存
-- ✅ **数据库主从** - 生产环境高可用架构
-- ✅ **数据库自动迁移** - 自动创建和更新表结构
+- **MySQL数据库** - 完整的关系型数据支持
+- **GORM ORM框架** - 强大的对象关系映射
+- **数据库主从** - 生产环境高可用架构
+- **自动迁移** - 自动创建和更新表结构
 
 ### 🌐 API功能
-- ✅ **用户管理完整 CRUD 操作** - 增删改查功能
-- ✅ **分页查询支持** - 高效的数据分页
-- ✅ **软删除功能** - 安全的数据删除
-- ✅ **统一响应格式** - 标准化的API响应
-- ✅ **请求参数验证** - 严格的数据验证
-- ✅ **CORS 跨域支持** - 前端友好的跨域处理
+- **用户管理** - 完整的用户CRUD操作
+- **商品管理** - 商品信息管理和库存控制
+- **购物车** - 添加、修改、删除购物车商品
+- **订单管理** - 订单创建、状态更新、取消
+- **分页查询** - 高效的数据分页
+- **统一响应格式** - 标准化的API响应
 
 ### 🔧 开发体验
-- ✅ **依赖注入** - 松耦合的组件设计
-- ✅ **中间件支持** - 可插拔的功能组件
-- ✅ **日志记录** - 完整的请求日志
-- ✅ **错误处理** - 统一的错误处理机制
-- ✅ **Swagger文档** - 自动生成的API文档和测试界面
-- ✅ **热重载** - 开发环境代码实时更新
+- **Swagger文档** - 自动生成API文档和测试界面
+- **热重载** - 开发环境代码实时更新
+- **健康检查** - 服务状态实时监控
+- **日志记录** - 完整的请求日志
+- **CORS支持** - 前端友好的跨域处理
 
 ### 📊 监控运维
-- ✅ **Prometheus监控** - 完整的指标采集
-- ✅ **Grafana可视化** - 实时监控面板
-- ✅ **ELK日志栈** - 测试和生产环境日志分析
-- ✅ **健康检查** - 服务状态实时监控
-- ✅ **负载均衡** - 生产环境Nginx负载均衡
+- **Prometheus监控** - 完整的指标采集
+- **Grafana可视化** - 实时监控面板
+- **容器监控** - Docker容器资源监控
+- **日志聚合** - 集中式日志管理
 
-### 🛡️ 安全特性
-- ✅ **环境隔离** - 不同环境独立配置和数据
-- ✅ **SSL支持** - 生产环境HTTPS加密
-- ✅ **配置管理** - 环境变量和配置文件管理
-- ✅ **消息队列** - 生产环境RabbitMQ支持
-
-## 快速开始
+## 🚀 快速开始
 
 ### 前置要求
 
-1. Go 1.21+
-2. MySQL 5.7+ 或 8.0+
-3. 创建数据库 `gin`
+- **Go 1.21+** - [下载地址](https://golang.org/dl/)
+- **Docker Desktop** - [下载地址](https://www.docker.com/products/docker-desktop)
+- **MySQL 8.0+** - 本地安装或Docker容器
 
-```sql
-CREATE DATABASE gin CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 数据库配置
-
-项目使用以下默认配置连接 MySQL：
-- Host: localhost
-- Port: 3306
-- User: root
-- Password: root
-- Database: gin
-
-如需修改配置，请编辑 `config/database.go` 文件中的 `GetDatabaseConfig()` 函数。
-
-### 方法一：使用 Makefile（推荐）
+### 方法一：Docker一键部署（推荐）
 
 ```bash
-# 查看所有可用命令
-make help
+# 克隆项目
+git clone https://github.com/your-repo/go-shop-api.git
+cd go-shop-api
 
-# 开发环境启动（自动安装依赖、格式化、检查、运行）
-make dev
+# 启动所有微服务
+docker-compose -f docker-compose.microservices.yml up -d --build
 
-# 或分步执行
-make deps    # 安装依赖
-make run     # 运行项目
+# 查看服务状态
+docker-compose -f docker-compose.microservices.yml ps
 ```
 
-### 方法二：手动执行
+### 方法二：本地开发
 
 ```bash
 # 安装依赖
 go mod tidy
 
-# 运行项目（MVC架构）
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE gin_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 启动应用
 go run main.go
 ```
 
-### 项目启动后
+### 方法三：Makefile（跨平台）
 
-服务器启动后会显示：
+```bash
+# 查看所有可用命令
+make help
+
+# 开发环境启动
+make dev
+
+# 生产环境启动
+make prod
+
+# 测试环境启动
+make test
 ```
-服务器启动在: :8080
-[GIN-debug] Listening and serving HTTP on :8080
-```
 
-访问 http://localhost:8080 即可看到欢迎页面。
+## 🌐 访问地址
 
-### 📚 Swagger API 文档
+### 主要入口
+- **商城首页**: http://localhost:8080
+- **API网关**: http://localhost:8080/gateway
+- **Swagger文档**: http://localhost:8080/swagger/index.html
+- **健康检查**: http://localhost:8080/health
 
-项目启动后，可以通过以下地址访问交互式API文档：
+### 微服务端点
+| 服务名称 | 端口 | Swagger文档 | 健康检查 |
+|---------|------|-------------|----------|
+| **API网关** | 8080 | [Swagger](http://localhost:8080/swagger/index.html) | [Health](http://localhost:8080/health) |
+| 用户服务 | 8085 | [Swagger](http://localhost:8085/swagger/index.html) | [Health](http://localhost:8085/health) |
+| 产品服务 | 8082 | [Swagger](http://localhost:8082/swagger/index.html) | [Health](http://localhost:8082/health) |
+| 购物车服务 | 8083 | [Swagger](http://localhost:8083/swagger/index.html) | [Health](http://localhost:8083/health) |
+| 订单服务 | 8084 | [Swagger](http://localhost:8084/swagger/index.html) | [Health](http://localhost:8084/health) |
 
-**🌟 Swagger UI：** http://localhost:8080/swagger/index.html
-
-通过Swagger文档你可以：
-- 📖 查看所有API接口说明
-- 🧪 直接在浏览器中测试API
-- 📋 查看请求/响应格式
-- 🔍 了解参数说明和验证规则
-
-程序启动时会自动：
-1. 连接到 MySQL 数据库
-2. 创建必要的数据表（自动迁移）
-3. 启动 HTTP 服务器
-
-服务器将在 `http://localhost:8080` 启动。
-
-## API 接口
+## 📋 API接口
 
 ### 基础路由
-
 - `GET /` - 欢迎页面
+- `GET /health` - 健康检查
+- `GET /swagger/index.html` - API文档
 
-### API 路由 (前缀: `/api/v1`)
-
-- `GET /api/v1/health` - 健康检查（包含数据库状态）
-- `GET /api/v1/users` - 获取用户列表（支持分页）
-- `POST /api/v1/users` - 创建新用户
-- `GET /api/v1/users/:id` - 根据ID获取用户
-- `PUT /api/v1/users/:id` - 更新用户信息
-- `DELETE /api/v1/users/:id` - 删除用户（软删除）
-
-### 示例请求
-
-#### 健康检查
+### 用户管理 (`/api/v1/users`)
 ```bash
-curl http://localhost:8080/api/v1/health
-
-# 或访问Swagger文档进行可视化测试
-# http://localhost:8080/swagger/index.html
-```
-
-#### 获取用户列表（支持分页）
-```bash
-# 获取第一页，每页10条
+# 获取用户列表（支持分页）
 curl http://localhost:8080/api/v1/users
 
-# 获取第二页，每页5条
-curl "http://localhost:8080/api/v1/users?page=2&page_size=5"
-```
-
-#### 创建用户
-```bash
+# 创建用户
 curl -X POST http://localhost:8080/api/v1/users \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "张三",
-    "email": "zhangsan@example.com",
-    "phone": "13888888888"
-  }'
-```
+  -d '{"name":"张三","email":"test@example.com","phone":"13800138000"}'
 
-#### 获取指定用户
-```bash
+# 获取指定用户
 curl http://localhost:8080/api/v1/users/1
-```
 
-#### 更新用户
-```bash
+# 更新用户
 curl -X PUT http://localhost:8080/api/v1/users/1 \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "李四",
-    "phone": "13999999999"
-  }'
-```
+  -d '{"name":"李四","phone":"13999999999"}'
 
-#### 删除用户
-```bash
+# 删除用户
 curl -X DELETE http://localhost:8080/api/v1/users/1
 ```
 
-## 项目结构 (MVC分层架构)
+### 产品管理 (`/api/v1/products`)
+```bash
+# 获取产品列表
+curl http://localhost:8080/api/v1/products
+
+# 创建产品
+curl -X POST http://localhost:8080/api/v1/products \
+  -H "Content-Type: application/json" \
+  -d '{"name":"iPhone 15","price":5999,"stock":100}'
+```
+
+### 购物车管理 (`/api/v1/cart`)
+```bash
+# 获取购物车
+curl http://localhost:8080/api/v1/cart?user_id=1
+
+# 添加商品到购物车
+curl -X POST http://localhost:8080/api/v1/cart/items?user_id=1 \
+  -H "Content-Type: application/json" \
+  -d '{"product_id":1,"quantity":2}'
+```
+
+### 订单管理 (`/api/v1/orders`)
+```bash
+# 创建订单
+curl -X POST http://localhost:8080/api/v1/orders \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":1,"items":[{"product_id":1,"quantity":1,"price":5999}]}'
+```
+
+## 🛠️ 环境配置
+
+### 环境变量
+
+项目支持以下环境变量配置：
+
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `DB_HOST` | localhost | 数据库地址 |
+| `DB_PORT` | 3306 | 数据库端口 |
+| `DB_USER` | root | 数据库用户 |
+| `DB_PASSWORD` | root | 数据库密码 |
+| `DB_NAME` | gin_dev | 数据库名称 |
+| `PORT` | 8080 | 应用端口 |
+| `GIN_MODE` | debug | Gin运行模式 |
+| `LOG_LEVEL` | debug | 日志级别 |
+
+### 配置文件
+
+项目使用以下配置文件：
+- `config/local.env` - 本地开发配置
+- `config/dev.env` - 开发环境配置
+- `config/uat.env` - 测试环境配置
+- `config/prod.env` - 生产环境配置
+
+## 🏗️ 项目结构
 
 ```
-gin-project/
+go-shop-api/
 ├── app/                    # 应用程序主入口
-│   └── app.go             # 应用初始化和依赖注入
 ├── config/                 # 配置相关
-│   └── database.go        # 数据库配置
 ├── controllers/           # 控制器层 (MVC-Controller)
-│   ├── user_controller.go # 用户控制器
-│   └── health_controller.go # 健康检查控制器
+├── docker/                # Docker配置
+│   ├── docker-compose.*.yml  # 多环境Docker配置
+│   ├── mysql/             # MySQL配置
+│   ├── nginx/             # Nginx配置
+│   └── prometheus/        # 监控配置
+├── docs/                  # 项目文档
 ├── middleware/            # 中间件层
-│   ├── cors.go           # CORS中间件
-│   └── logger.go         # 日志中间件
 ├── models/               # 模型层 (MVC-Model)
-│   └── user.go          # 用户模型
 ├── repositories/         # 仓储层 (数据访问层)
-│   └── user_repository.go # 用户仓储
-├── response/            # 响应层 (MVC-View的JSON版本)
-│   └── response.go      # 统一响应格式
-├── routes/              # 路由层
-│   └── routes.go        # 路由定义
-├── services/            # 服务层 (业务逻辑层)
-│   └── user_service.go  # 用户服务
-├── scripts/             # 脚本文件
-│   ├── init.sql         # 数据库初始化脚本
-│   └── seed_data.go     # 测试数据脚本
-├── docs/                # 文档
-│   └── architecture.md  # 架构设计文档
-├── go.mod               # Go 模块文件
-├── go.sum               # 依赖版本锁定
-├── main.go              # 程序入口（已重构为MVC）
-├── Makefile             # 项目管理命令
-└── README.md            # 项目说明
+├── response/              # 响应层
+├── routes/                # 路由层
+├── scripts/               # 脚本文件
+├── services/              # 服务层 (业务逻辑层)
+│   ├── api-gateway/       # API网关服务
+│   ├── user-service/      # 用户服务
+│   ├── product-service/   # 产品服务
+│   ├── cart-service/      # 购物车服务
+│   └── order-service/     # 订单服务
+├── shared/                # 共享模块
+├── Makefile              # 项目管理命令
+├── main.go               # 程序入口
+└── README.md             # 项目说明
 ```
 
-## 技术栈
+## 🔍 监控和调试
 
-- Go 1.21+
-- Gin Web Framework v1.10.1
-- GORM v1.25.5 (ORM 框架)
-- MySQL Driver v1.5.2
-- MySQL 5.7+ / 8.0+
+### Docker服务管理
 
-## 数据库表结构
+```bash
+# 查看服务状态
+docker-compose -f docker-compose.microservices.yml ps
 
-### users 表
-```sql
-CREATE TABLE `users` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `phone` varchar(20) DEFAULT NULL,
-  `avatar` varchar(500) DEFAULT NULL,
-  `status` int DEFAULT '1' COMMENT '用户状态 1:正常 0:禁用',
-  `created_at` datetime(3) DEFAULT NULL,
-  `updated_at` datetime(3) DEFAULT NULL,
-  `deleted_at` datetime(3) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_users_email` (`email`),
-  KEY `idx_users_deleted_at` (`deleted_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+# 查看服务日志
+docker-compose -f docker-compose.microservices.yml logs -f [服务名]
+
+# 重启服务
+docker-compose -f docker-compose.microservices.yml restart [服务名]
+
+# 停止服务
+docker-compose -f docker-compose.microservices.yml down
 ```
 
-## 开发建议
+### 本地调试
 
-1. ✅ MySQL 数据库集成 - 已完成
-2. 实现用户认证和授权 (JWT)
-3. ✅ 添加 CORS 中间件 - 已完成
-4. 使用配置文件管理环境变量
-5. 添加单元测试
-6. ✅ 添加日志中间件 - 已完成
-7. 实现 API 限流
-8. ✅ 添加 Swagger 文档 - 已完成
+```bash
+# 查看应用日志
+tail -f logs/app.log
 
-## 许可证
+# 数据库连接测试
+mysql -h localhost -P 3306 -u root -p -e "SELECT 1;"
 
-MIT License 
+# 端口检查
+lsof -i :8080
+```
+
+### 性能监控
+
+```bash
+# 查看容器资源使用
+docker stats
+
+# 查看Prometheus指标
+http://localhost:9090
+
+# 查看Grafana面板
+http://localhost:3000
+```
+
+## 🚨 故障排除
+
+### 常见问题
+
+#### 1. 端口被占用
+```bash
+# 查看端口占用
+lsof -i :8080
+
+# 杀死占用进程
+kill -9 [PID]
+```
+
+#### 2. 数据库连接失败
+```bash
+# 检查MySQL服务
+mysqladmin ping -h localhost
+
+# 检查数据库是否存在
+mysql -u root -p -e "SHOW DATABASES;"
+```
+
+#### 3. Docker容器启动失败
+```bash
+# 查看详细错误日志
+docker-compose -f docker-compose.microservices.yml logs [服务名]
+
+# 清理未使用的镜像
+docker system prune -a
+```
+
+#### 4. 权限问题
+```bash
+# 给脚本添加执行权限
+chmod +x scripts/*.sh
+
+# 修复Docker权限
+sudo chown -R $USER:$USER .
+```
+
+## 🤝 贡献指南
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开 Pull Request
+
+## 📚 技术栈
+
+- **后端**: Go 1.21+, Gin Web Framework
+- **数据库**: MySQL 8.0+, GORM ORM
+- **容器化**: Docker, Docker Compose
+- **监控**: Prometheus, Grafana
+- **文档**: Swagger/OpenAPI 3.0
+- **构建**: Makefile
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 📞 技术支持
+
+如果遇到问题，请：
+
+1. 查看本文档的故障排除部分
+2. 检查项目 [Issues](https://github.com/your-repo/go-shop-api/issues)
+3. 提交新的Issue并描述详细问题
+
+---
+
+**🎉 恭喜！你的 Go Shop 微服务平台已经成功部署！**
+
+访问 [http://localhost:8080](http://localhost:8080) 开始探索吧！

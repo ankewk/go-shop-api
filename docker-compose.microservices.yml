@@ -1,0 +1,282 @@
+version: '3.8'
+
+services:
+  # 数据库
+  postgres:
+    image: postgres:13
+    container_name: go-shop-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: go_shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - go-shop-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: go-shop-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - go-shop-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services-new/api-gateway/Dockerfile
+    container_name: go-shop-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=:8080
+      - REDIS_URL=redis:6379
+      - JWT_SECRET=your-secret-key
+      - AUTH_SERVICE_URL=auth-service:8081
+      - USER_SERVICE_URL=user-service:8082
+      - ORDER_SERVICE_URL=order-service:8083
+      - PRODUCT_SERVICE_URL=product-service:8084
+      - CART_SERVICE_URL=cart-service:8085
+      - PAYMENT_SERVICE_URL=payment-service:8086
+      - NOTIFICATION_SERVICE_URL=notification-service:8087
+      - SEARCH_SERVICE_URL=search-service:8088
+    depends_on:
+      - redis
+      - auth-service
+      - user-service
+    networks:
+      - go-shop-network
+
+  # 认证服务
+  auth-service:
+    build:
+      context: .
+      dockerfile: services-new/auth-service/Dockerfile
+    container_name: go-shop-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=:8081
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=auth_db
+      - JWT_SECRET=your-secret-key
+      - JWT_EXPIRY=24h
+    depends_on:
+      - postgres
+    networks:
+      - go-shop-network
+
+  # 用户服务
+  user-service:
+    build:
+      context: .
+      dockerfile: services-new/user-service/Dockerfile
+    container_name: go-shop-user-service
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=:8082
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=user_db
+    depends_on:
+      - postgres
+    networks:
+      - go-shop-network
+
+  # 订单服务
+  order-service:
+    build:
+      context: .
+      dockerfile: services-new/order-service/Dockerfile
+    container_name: go-shop-order-service
+    ports:
+      - "8083:8083"
+    environment:
+      - PORT=:8083
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=order_db
+      - REDIS_URL=redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - go-shop-network
+
+  # 商品服务
+  product-service:
+    build:
+      context: .
+      dockerfile: services-new/product-service/Dockerfile
+    container_name: go-shop-product-service
+    ports:
+      - "8084:8084"
+    environment:
+      - PORT=:8084
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=product_db
+      - REDIS_URL=redis:6379
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - go-shop-network
+
+  # 购物车服务
+  cart-service:
+    build:
+      context: .
+      dockerfile: services-new/cart-service/Dockerfile
+    container_name: go-shop-cart-service
+    ports:
+      - "8085:8085"
+    environment:
+      - PORT=:8085
+      - REDIS_URL=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - go-shop-network
+
+  # 支付服务
+  payment-service:
+    build:
+      context: .
+      dockerfile: services-new/payment-service/Dockerfile
+    container_name: go-shop-payment-service
+    ports:
+      - "8086:8086"
+    environment:
+      - PORT=:8086
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=payment_db
+    depends_on:
+      - postgres
+    networks:
+      - go-shop-network
+
+  # 通知服务
+  notification-service:
+    build:
+      context: .
+      dockerfile: services-new/notification-service/Dockerfile
+    container_name: go-shop-notification-service
+    ports:
+      - "8087:8087"
+    environment:
+      - PORT=:8087
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=notification_db
+    depends_on:
+      - postgres
+    networks:
+      - go-shop-network
+
+  # 搜索服务
+  search-service:
+    build:
+      context: .
+      dockerfile: services-new/search-service/Dockerfile
+    container_name: go-shop-search-service
+    ports:
+      - "8088:8088"
+    environment:
+      - PORT=:8088
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - go-shop-network
+
+  # Elasticsearch for search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    container_name: go-shop-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - go-shop-network
+
+  # RabbitMQ for message queue
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: go-shop-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - go-shop-network
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: go-shop-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - go-shop-network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: go-shop-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - go-shop-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  go-shop-network:
+    driver: bridge
